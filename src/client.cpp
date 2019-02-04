@@ -220,7 +220,7 @@ httb::response httb::client::execute(const httb::request &request) {
 
     s = boost::beast::buffers_to_string(res.body().data());
 
-    if (ec) {
+    if (ec && ec != boost::system::errc::not_connected) {
         return boostErrorToResponseError(std::move(resp), ec);
     }
 
