@@ -1,5 +1,5 @@
 /**
- * wsserver_standalone
+ * httb
  * HttpClient.h
  *
  * @author Eduard Maximovich <edward.vstock@gmail.com>

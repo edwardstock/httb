@@ -162,6 +162,10 @@ void httb::base_request::addParam(httb::kv &&keyValue) {
     m_params.push_back(std::move(keyValue));
 }
 
+void httb::base_request::useSSL(bool useSSL) {
+    m_ssl = useSSL;
+}
+
 std::string httb::base_request::getUrl() const {
     std::stringstream ss;
 
@@ -227,6 +231,27 @@ std::string httb::base_request::getParam(const std::string &key, bool icase) con
     }
 
     return std::string();
+}
+
+std::vector<std::string> httb::base_request::getParamArray(const std::string &key, bool icase) const {
+    std::vector<std::string> out;
+
+    using toolboxpp::strings::equalsIgnoreCase;
+    const auto &cmp = [icase](const std::string &lhs, const std::string &rhs) {
+      if (icase) {
+          return equalsIgnoreCase(lhs, rhs);
+      } else {
+          return lhs == rhs;
+      }
+    };
+
+    for (const auto &param: m_params) {
+        if (cmp(param.first, key)) {
+            out.push_back(param.second);
+        }
+    }
+
+    return out;
 }
 
 std::string httb::base_request::getParamsString() const {

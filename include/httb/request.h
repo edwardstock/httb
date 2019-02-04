@@ -60,6 +60,10 @@ public:
     /// \param keyValue pair of strings
     void addParam(kv &&keyValue);
 
+    /// \brief Make request using SSL
+    /// \param useSSL
+    void useSSL(bool useSSL);
+
     /// \brief Return existed url
     /// \return url string or empty string if did not set
     std::string getUrl() const;
@@ -109,6 +113,14 @@ public:
     /// \param icase search case sensititvity
     /// \return empty string of parameter did not set
     std::string getParam(const std::string &key, bool icase = true) const;
+
+    /// \brief Return multiple entries if param is an array.
+    /// For example k[]=k&m[]=k&m=3, will return:
+    /// std::vector<std::string> out(3);
+    /// \param key
+    /// \param icase
+    /// \return vector of string pairs
+    std::vector<std::string> getParamArray(const std::string &key, bool icase = true) const;
 
     /// \brief Build passed url with query parameters
     /// \return url with parameters. if url did not set, will return empty string without parameters

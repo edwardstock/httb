@@ -46,7 +46,6 @@ TEST(HttpClientTest, TestBuildRequestGoogleQuery) {
     ASSERT_STREQ(req.getParam("sourceid").c_str(), "chrome");
     ASSERT_STREQ(req.getParam("ie").c_str(), "UTF-8");
 
-
     ASSERT_STREQ(req.getUrl().c_str(), src.c_str());
 }
 

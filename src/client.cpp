@@ -1,6 +1,6 @@
 /**
- * wsserver_standalone
- * HttpClient.cpp
+ * httb
+ * client.cpp
  *
  * @author Eduard Maximovich <edward.vstock@gmail.com>
  * @link https://github.com/edwardstock
@@ -15,7 +15,6 @@
 #include "httb/request.h"
 #include <boost/beast/core/file.hpp>
 
-// CLIENT
 httb::client_base::client_base() :
     m_verboseOutput(&std::cout),
     m_ctx(boost::asio::ssl::context::sslv23_client) {
