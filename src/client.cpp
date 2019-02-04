@@ -215,7 +215,9 @@ httb::response httb::client::execute(const httb::request &request) {
             socket.shutdown(tcp::socket::shutdown_both);
         }
     } catch (const boost::system::system_error &e) {
-        return boostErrorToResponseError(std::move(resp), e);
+        if (e.code() != boost::system::errc::not_connected) {
+            return boostErrorToResponseError(std::move(resp), e);
+        }
     }
 
     s = boost::beast::buffers_to_string(res.body().data());
