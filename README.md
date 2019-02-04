@@ -1,4 +1,4 @@
-# httb
+# httb - HyperText Transfer Beast
 Lightweight C++ HTTP Client based on Boost.Beast
 
 ## Features
