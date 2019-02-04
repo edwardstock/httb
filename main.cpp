@@ -17,7 +17,7 @@ std::string exec(const char* cmd) {
     return result;
 }
 
-int main(int argc, char** argv) {
+int main(int, char **argv) {
     std::cout << argv[0] << std::endl;
     int pid = std::stoi(exec("/Users/edward/Sync/projects/cpp/httb/tests/mock/run-server.sh"));
 

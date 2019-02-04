@@ -34,7 +34,7 @@ set(SOURCES
 
 add_library(${PROJECT_NAME} STATIC ${SOURCES})
 
-target_compile_options(${PROJECT_NAME} PUBLIC -pedantic -Wall -Werror -Wsign-compare)
+target_compile_options(${PROJECT_NAME} PUBLIC -pedantic -Wall -Wsign-compare -Wunused-parameter)
 
 ## BOOST
 set(Boost_DEBUG OFF)

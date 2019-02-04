@@ -60,7 +60,7 @@ httb::body_form_urlencoded &httb::body_form_urlencoded::addParams(const std::mul
     }
     return *this;
 }
-const std::string httb::body_form_urlencoded::build(httb::io_container *request) const {
+const std::string httb::body_form_urlencoded::build(httb::io_container *) const {
     std::stringstream out;
     size_t i = 0;
     for (auto &h: params) {
@@ -82,9 +82,9 @@ httb::body_form_urlencoded::body_form_urlencoded(const std::string &encodedParam
 httb::body_form_urlencoded::body_form_urlencoded(std::string &&encodedParamsString) {
     parseParams(std::move(encodedParamsString));
 }
-void httb::body_form_urlencoded::parseParams(const std::string &encoded) {
+void httb::body_form_urlencoded::parseParams(const std::string &) {
 
 }
-void httb::body_form_urlencoded::parseParams(std::string &&encoded) {
+void httb::body_form_urlencoded::parseParams(std::string &&) {
 
 }
