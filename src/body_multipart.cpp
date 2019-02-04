@@ -58,7 +58,7 @@ httb::body_multipart &httb::body_multipart::addEntry(httb::multipart_entry &&ent
 
 const std::string httb::body_multipart::build(httb::io_container *request) const {
     std::stringstream ss;
-    int i = 0;
+    size_t i = 0;
     for (const auto &entry: m_entries) {
         if (entry.body.empty()) {
             // warn

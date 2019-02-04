@@ -62,7 +62,7 @@ httb::body_form_urlencoded &httb::body_form_urlencoded::addParams(const std::mul
 }
 const std::string httb::body_form_urlencoded::build(httb::io_container *request) const {
     std::stringstream out;
-    int i = 0;
+    size_t i = 0;
     for (auto &h: params) {
         out << h.first << "=" << h.second;
         if (i != params.size() - 1) {
