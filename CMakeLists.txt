@@ -12,7 +12,7 @@ set(CMAKE_CXX_STANDARD 14)
 
 set(CMAKE_DEBUG_POSTFIX "" CACHE STRING "postfix")
 
-    include_directories(include)
+include_directories(include)
 
 set(SOURCES
     src/client.cpp
@@ -52,13 +52,14 @@ endif ()
 set(OPENSSL_USE_STATIC_LIBS ON)
 find_package(OpenSSL 1.1.0 REQUIRED)
 
-
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/libs/toolboxpp)
-set_target_properties(
-	toolboxpp PROPERTIES
-	ENABLE_STATIC ON
-	CMAKE_BUILD_TYPE Release
-)
+if (NOT TARGET toolboxpp)
+	add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/libs/toolboxpp)
+	set_target_properties(
+		toolboxpp PROPERTIES
+		ENABLE_STATIC ON
+		CMAKE_BUILD_TYPE Release
+	)
+endif ()
 target_link_libraries(${PROJECT_NAME} toolboxpp)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/toolboxpp/include)
 
@@ -82,7 +83,7 @@ if (WITH_TESTS)
 	set(GTEST_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/libs/googletest/googletest)
 
 	include_directories(${GTEST_SOURCE_DIR}/include ${GTEST_SOURCE_DIR})
-		add_subdirectory(${GTEST_SOURCE_DIR})
+	add_subdirectory(${GTEST_SOURCE_DIR})
 	if (WIN32)
 		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++0x")
 	elseif (APPLE)
@@ -102,7 +103,7 @@ if (WITH_TESTS)
 	include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src)
 	target_include_directories(${PROJECT_NAME_TEST} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
 
-		target_link_libraries(${PROJECT_NAME_TEST} gtest gtest_main)
+	target_link_libraries(${PROJECT_NAME_TEST} gtest gtest_main)
 
 	#include(cmakes/CodeCoverage.cmake)
 	#append_coverage_compiler_flags()
