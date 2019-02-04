@@ -16,8 +16,8 @@
 
 // CLIENT
 httb::client_base::client_base():
-    m_ctx(boost::asio::ssl::context::sslv23_client),
-    m_verboseOutput(&std::cout){
+    m_verboseOutput(&std::cout),
+    m_ctx(boost::asio::ssl::context::sslv23_client) {
     loadRootCertificates(m_ctx);
 }
 httb::client_base::~client_base() {

@@ -278,7 +278,6 @@ bool httb::base_request::isSSL() const {
 
 boost::beast::http::request<boost::beast::http::string_body> httb::request::createBeastRequest() const {
     namespace http = boost::beast::http;
-    boost::system::error_code ec;
 
     http::request<http::string_body> req{getMethod(), getPath(), 11};
     req.set(http::field::host, getHost());

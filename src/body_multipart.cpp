@@ -21,8 +21,8 @@ httb::multipart_entry::multipart_entry(
     const std::string &filename,
     const std::string &body) :
     name(name),
-    contentType(contentType),
     body(body),
+    contentType(contentType),
     filename(filename) {
 
 }
@@ -33,8 +33,8 @@ httb::multipart_entry::multipart_entry(
     std::string &&filename,
     std::string &&body) :
     name(std::move(name)),
-    contentType(std::move(contentType)),
     body(std::move(body)),
+    contentType(std::move(contentType)),
     filename(std::move(filename)) {
 
 }
