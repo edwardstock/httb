@@ -7,6 +7,9 @@
  * \link   https://github.com/edwardstock
  */
 
+#ifndef HTTB_BODY_STRING_H
+#define HTTB_BODY_STRING_H
+
 #include "httb/body.h"
 
 namespace httb {
@@ -26,3 +29,5 @@ private:
 };
 
 }
+
+#endif // HTTB_BODY_STRING_H

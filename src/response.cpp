@@ -11,20 +11,6 @@
 #include "httb/defs.h"
 #include "httb/response.h"
 
-//nlohmann::json httb::response::parseJsonBody() const {
-//    if (data.empty()) {
-//        return nlohmann::json();
-//    }
-//
-//    nlohmann::json out;
-//    try {
-//        out = nlohmann::json::parse(data);
-//    } catch (const std::exception &e) {
-//        std::cerr << "Can't parse incoming json data: " << e.what() << std::endl;
-//    }
-//
-//    return out;
-//}
 httb::kv_vector httb::response::parseFormUrlEncode() const {
     if (data.empty()) {
         return {};
@@ -45,7 +31,7 @@ void httb::response::dump() const {
               << " Message: " << statusMessage << std::endl
               << "    Body: " << data << std::endl
               << " Headers:\n";
-    for (auto h: headers) {
+    for (const auto &h: headers) {
         std::cout << "\t" << h.first << ": " << h.second << std::endl;
     }
 }
@@ -69,4 +55,7 @@ void httb::response::setBody(std::string &&body) {
 }
 size_t httb::response::getBodySize() const {
     return data.length();
+}
+bool httb::response::isInternalError() {
+    return statusCode >= INTERNAL_ERROR_OFFSET || statusCode < 0;
 }

@@ -9,13 +9,14 @@
 #include <thread>
 #include <future>
 #include <toolboxpp.h>
+#include <type_traits>
 #include "httb/client.h"
 #include "helpers.hpp"
 #include "httb/request.h"
 #include <boost/beast/core/file.hpp>
 
 // CLIENT
-httb::client_base::client_base():
+httb::client_base::client_base() :
     m_verboseOutput(&std::cout),
     m_ctx(boost::asio::ssl::context::sslv23_client) {
     loadRootCertificates(m_ctx);
@@ -51,7 +52,7 @@ bool httb::client_base::isFollowRedirects() const {
 }
 
 void httb::client_base::scanDir(const boost::filesystem::path &path,
-                                   std::unordered_map<std::string, std::string> &map) {
+                                std::unordered_map<std::string, std::string> &map) {
     namespace fs = boost::filesystem;
 
     if (!fs::exists(path)) {
@@ -108,6 +109,20 @@ void httb::client_base::loadRootCertificates(boost::asio::ssl::context &ctx) {
         throw boost::system::system_error{ec};
 }
 
+httb::response httb::client_base::boostErrorToResponseError(httb::response &&in, boost::system::error_code ec) {
+    httb::response out = std::move(in);
+    out.statusCode = httb::response::INTERNAL_ERROR_OFFSET + ec.value();
+    std::stringstream errorStream;
+    errorStream << ec.category().name() << "[" << out.statusCode << "]" << ": " << ec.message();
+    out.setBody(errorStream.str());
+
+    return out;
+}
+
+httb::response httb::client_base::boostErrorToResponseError(httb::response &&in, const boost::system::system_error &e) {
+    return boostErrorToResponseError(std::move(in), e.code());
+}
+
 httb::client::client() : client_base() {
 }
 httb::client::~client() {
@@ -115,6 +130,7 @@ httb::client::~client() {
 
 httb::response httb::client::execute(const httb::request &request) {
     httb::response resp;
+    boost::system::error_code ec;
 
     using tcp = boost::asio::ip::tcp;
     namespace http = boost::beast::http;
@@ -126,18 +142,20 @@ httb::response httb::client::execute(const httb::request &request) {
     // These objects perform our I/O
     tcp::resolver resolver{ioc};
     // Look up the domain name
-    const auto results = resolver.resolve(request.getHost(), request.getPortString());
+    const auto results = resolver.resolve(request.getHost(), request.getPortString(), ec);
 
-    boost::system::error_code ec;
+    if (ec) {
+        return boostErrorToResponseError(std::move(resp), ec);
+    }
 
     auto req = request.createBeastRequest();
 
-    if(m_verbose && m_verboseOutput) {
+    if (m_verbose && m_verboseOutput) {
         std::stringstream verboseStream;
         verboseStream << req;
         std::string verboseString = verboseStream.str();
 
-        if(verboseStream.str().size() >= 1024) {
+        if (verboseStream.str().size() >= 1024) {
             verboseString = verboseString.substr(0, 1023);
             verboseString += " ...(too big for output)";
         }
@@ -153,52 +171,58 @@ httb::response httb::client::execute(const httb::request &request) {
 
     std::string s;
 
-    if (request.isSSL()) {
-        ssl::stream<tcp::socket> stream{ioc, m_ctx};
-        // Set SNI Hostname (many hosts need this to handshake successfully)
-        if (!SSL_set_tlsext_host_name(stream.native_handle(), request.getHost().c_str())) {
-            boost::system::error_code ec{static_cast<int>(::ERR_get_error()), boost::asio::error::get_ssl_category()};
-            throw boost::system::system_error{ec};
+    try {
+        if (request.isSSL()) {
+            ssl::stream<tcp::socket> stream{ioc, m_ctx};
+            // Set SNI Hostname (many hosts need this to handshake successfully)
+            if (!SSL_set_tlsext_host_name(stream.native_handle(), request.getHost().c_str())) {
+                boost::system::error_code
+                    ec{static_cast<int>(::ERR_get_error()), boost::asio::error::get_ssl_category()};
+                return boostErrorToResponseError(std::move(resp), ec);
+            }
+
+            // Make the connection on the IP address we get from a lookup
+            boost::asio::connect(stream.next_layer(), results.begin(), results.end());
+
+            // Perform the SSL handshake
+            stream.handshake(ssl::stream_base::client);
+
+            // Send the HTTP request to the remote host
+            http::write(stream, req, ec);
+
+            // Receive the HTTP response
+            http::read(stream, buffer, res, ec);
+
+            stream.shutdown(ec);
+
+            if (ec == boost::asio::error::eof) {
+                // Rationale:
+                // http://stackoverflow.com/questions/25587403/boost-asio-ssl-async-shutdown-always-finishes-with-an-error
+                ec.assign(0, ec.category());
+            }
+        } else {
+            tcp::socket socket{ioc};
+
+            // Make the connection on the IP address we get from a lookup
+            boost::asio::connect(socket, results.begin(), results.end());
+
+            // Send the HTTP request to the remote host
+            http::write(socket, req);
+
+            // Receive the HTTP response
+            http::read(socket, buffer, res);
+
+            socket.shutdown(tcp::socket::shutdown_both);
         }
-
-        // Make the connection on the IP address we get from a lookup
-        boost::asio::connect(stream.next_layer(), results.begin(), results.end());
-
-        // Perform the SSL handshake
-        stream.handshake(ssl::stream_base::client);
-
-        // Send the HTTP request to the remote host
-        http::write(stream, req);
-
-        // Receive the HTTP response
-        http::read(stream, buffer, res);
-
-        stream.shutdown(ec);
-
-        if (ec == boost::asio::error::eof) {
-            // Rationale:
-            // http://stackoverflow.com/questions/25587403/boost-asio-ssl-async-shutdown-always-finishes-with-an-error
-            ec.assign(0, ec.category());
-        }
-    } else {
-        tcp::socket socket{ioc};
-
-        // Make the connection on the IP address we get from a lookup
-        boost::asio::connect(socket, results.begin(), results.end());
-
-        // Send the HTTP request to the remote host
-        http::write(socket, req);
-
-        // Receive the HTTP response
-        http::read(socket, buffer, res);
-
-        socket.shutdown(tcp::socket::shutdown_both, ec);
+    } catch (const boost::system::system_error &e) {
+        return boostErrorToResponseError(std::move(resp), e);
     }
 
     s = boost::beast::buffers_to_string(res.body().data());
 
-    if (ec && ec != boost::system::errc::not_connected)
-        throw boost::system::system_error{ec};
+    if (ec) {
+        return boostErrorToResponseError(std::move(resp), ec);
+    }
 
     resp.status = res.result();
     resp.statusCode = static_cast<typename std::underlying_type<httb::response::http_status>::type>(res.result());
@@ -210,18 +234,16 @@ httb::response httb::client::execute(const httb::request &request) {
 
     res.body().consume(res.body().size());
 
-
-    if(m_followRedirects) {
+    if (m_followRedirects) {
         int redirectBounces = 0;
-        while(redirectBounces < m_maxRedirectBounces && (
+        while (redirectBounces < m_maxRedirectBounces && (
             resp.status == httb::response::http_status::moved_permanently ||
                 resp.status == httb::response::http_status::found ||
                 resp.status == httb::response::http_status::temporary_redirect ||
                 resp.status == httb::response::http_status::permanent_redirect
         )) {
 
-            if(!resp.hasHeader("location")) {
-                // throw std::runtime_error("Unable to redirect: Location header is undefined");
+            if (!resp.hasHeader("location")) {
                 return resp;
             }
 
@@ -243,9 +265,9 @@ httb::response httb::client::execute(const httb::request &request) {
 }
 
 void httb::client::executeAsync(httb::request request, std::function<void(httb::response)> cb) {
-    auto res = std::async(std::launch::async, [this, req = std::move(request), c = std::move(cb)](){
+    auto res = std::async(std::launch::async, [this, req = std::move(request), c = std::move(cb)]() {
       auto res = execute(req);
-      if(c) {
+      if (c) {
           c(res);
       }
     });

@@ -7,8 +7,8 @@
  * \link   https://github.com/edwardstock
  */
 
-#ifndef WSSERVER_RESPONSE_H
-#define WSSERVER_RESPONSE_H
+#ifndef HTTB_RESPONSE_H
+#define HTTB_RESPONSE_H
 
 #include <string>
 #include <boost/beast.hpp>
@@ -18,6 +18,7 @@
 namespace httb {
 class response : public httb::io_container {
 public:
+    static const int INTERNAL_ERROR_OFFSET = 1000;
     friend class client;
     using http_status = boost::beast::http::status;
 
@@ -27,11 +28,6 @@ public:
     std::string statusMessage;
     std::string data;
     std::string _headersBuffer;
-
-//    /// \brief Return json data from body, empty object if can't parse
-//    /// \return
-//    nlohmann::json parseJsonBody() const;
-
     /// \brief Return map of POST body form-url-encoded data
     /// \return
     kv_vector parseFormUrlEncode() const;
@@ -50,7 +46,8 @@ public:
     /// \brief Check response status  200 <= code < 400
     /// \return
     bool isSuccess() const;
+    bool isInternalError();
 };
 }
 
-#endif //WSSERVER_RESPONSE_H
+#endif //HTTB_RESPONSE_H

@@ -50,6 +50,20 @@ TEST(HttpClientTest, TestBuildRequestGoogleQuery) {
     ASSERT_STREQ(req.getUrl().c_str(), src.c_str());
 }
 
+TEST(HttpClientTest, TestResponseError) {
+    httb::request req("http://wtf");
+    httb::client client;
+    client.setEnableVerbose(true);
+    httb::response resp = client.execute(req);
+
+    const std::string body = resp.getBody();
+    if (!resp.isSuccess()) {
+        std::cout << "Error response:" << std::endl;
+        std::cout << body << std::endl;
+    }
+    ASSERT_FALSE(resp.isSuccess());
+}
+
 TEST(HttpClientTest, TestSimpleGet) {
     httb::request req("http://localhost:9000/simple-server.php/get");
     httb::client client;
@@ -261,15 +275,6 @@ TEST(HttpClientTest, TestSimpleAsyncGet) {
     ASSERT_TRUE(responseIsSuccess1);
     ASSERT_TRUE(responseIsSuccess2);
 }
-
-//TEST(HttpClientTest, TestAsyncClient) {
-//    httb::request req("http://localhost:9000/simple-server.php/get");
-//    std::shared_ptr<httb::client_async> client = std::make_shared<httb::client_async>();
-//    client->execute(req, [](boost::system::error_code ec, httb::response resp) {
-//
-//    });
-//
-//}
 
 std::string exec(const char* cmd) {
     std::array<char, 128> buffer;

@@ -67,6 +67,8 @@ protected:
     void scanDir(const boost::filesystem::path &path, std::unordered_map<std::string, std::string> &map);
     void loadRootCertificates(boost::asio::ssl::context &ctx, boost::system::error_code &ec);
     inline void loadRootCertificates(boost::asio::ssl::context& ctx);
+    inline httb::response boostErrorToResponseError(httb::response &&in, boost::system::error_code ec);
+    inline httb::response boostErrorToResponseError(httb::response &&in, const boost::system::system_error &e);
 };
 
 /// \brief Simple Http Client based on low level http library boost beast

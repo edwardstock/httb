@@ -9,8 +9,9 @@ project(httb
 add_definitions(-DHTTB_VERSION="${CMAKE_PROJECT_VERSION}")
 
 set(CMAKE_CXX_STANDARD 14)
-
 set(CMAKE_DEBUG_POSTFIX "" CACHE STRING "postfix")
+
+option(WITH_TESTS "Enable tests" OFF)
 
 include_directories(include)
 
@@ -72,10 +73,7 @@ add_executable(${PROJECT_NAME}-bin main.cpp)
 
 target_link_libraries(${PROJECT_NAME}-bin ${PROJECT_NAME})
 
-
-option(WITH_TESTS "Enable tests" OFF)
 if (WITH_TESTS)
-
 	add_definitions(-DTEST_ROOT="${CMAKE_CURRENT_SOURCE_DIR}/tests")
 	set(PROJECT_NAME_TEST ${PROJECT_NAME}-test)
 	include_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/googletest/googletest/include)
