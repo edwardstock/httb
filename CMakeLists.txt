@@ -73,7 +73,7 @@ add_executable(${PROJECT_NAME}-bin main.cpp)
 target_link_libraries(${PROJECT_NAME}-bin ${PROJECT_NAME})
 
 
-set(WITH_TESTS ON)
+option(WITH_TESTS "Enable tests" OFF)
 if (WITH_TESTS)
 
 	add_definitions(-DTEST_ROOT="${CMAKE_CURRENT_SOURCE_DIR}/tests")
