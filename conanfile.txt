@@ -14,13 +14,13 @@ boost_regex/1.69.0@bincrafters/stable
 gtest/1.8.1@bincrafters/stable
 
 [options]
-OpenSSL : shared=False
+OpenSSL:shared=False
 # boost opts
-boost_system : shared=False
-boost_filesystem : shared=False
-boost_thread : shared=False
-boost_random : shared=False
-boost_regex : shared=False
+boost_system:shared=False
+boost_filesystem:shared=False
+boost_thread:shared=False
+boost_random:shared=False
+boost_regex:shared=False
 
 [generators]
 cmake
