@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-OS_TEST=$(uname -a | grep Darwin || echo "Linux")
+OS_TEST=$(uname | grep Darwin || echo "Linux")
 DD_SUFFIX="M"
 
 if [ "${OS_TEST}" != "Linux" ]
@@ -10,12 +10,12 @@ fi
 
 if [ ! -f "${1}/test_medium.bin" ]
 then
-    dd if=/dev/random of=${1}/test_medium.bin bs=1${DD_SUFFIX} count=1
+    dd if=/dev/urandom of=${1}/test_medium.bin bs=1${DD_SUFFIX} count=1
 fi
 
 if [ ! -f "${1}/test_big.bin" ]
 then
-    dd if=/dev/random of=${1}/test_big.bin bs=24${DD_SUFFIX} count=1
+    dd if=/dev/urandom of=${1}/test_big.bin bs=24${DD_SUFFIX} count=1
 fi
 
 echo "" > ${1}/run.log
