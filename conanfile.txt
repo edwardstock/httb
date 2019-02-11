@@ -1,0 +1,26 @@
+[requires]
+#common
+OpenSSL/1.1.1a@conan/stable
+# boost
+boost_system/1.69.0@bincrafters/stable
+boost_beast/1.69.0@bincrafters/stable
+boost_asio/1.69.0@bincrafters/stable
+boost_filesystem/1.69.0@bincrafters/stable
+boost_thread/1.69.0@bincrafters/stable
+boost_random/1.69.0@bincrafters/stable
+boost_regex/1.69.0@bincrafters/stable
+
+#test
+gtest/1.8.1@bincrafters/stable
+
+[options]
+OpenSSL : shared=False
+# boost opts
+boost_system : shared=False
+boost_filesystem : shared=False
+boost_thread : shared=False
+boost_random : shared=False
+boost_regex : shared=False
+
+[generators]
+cmake
