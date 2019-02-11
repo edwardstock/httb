@@ -41,7 +41,7 @@ httb::base_request::base_request(const std::string &url, uint16_t port):
     m_method(method::get),
     m_proto("http"),
     m_host(""),
-    m_path("/") {
+    m_path("/"){
     std::stringstream ss;
     ss << port;
     m_port = ss.str();
@@ -59,19 +59,8 @@ httb::base_request::base_request(const std::string &url, httb::base_request::met
     parseUrl(url);
 }
 
-//httb::request::request(const httb::HttpRequest &sRequest) :
-//    io_container(),
-//    m_method(methodFromString(sRequest->method)) {
-//    for (auto &h: sRequest->header) {
-//        addHeader(h.first, h.second);
-//    }
-//
-//    parseUrl(sRequest->path);
-//    parseParamsString(sRequest->query_string);
-//}
-
 void httb::base_request::parseUrl(const std::string &url) {
-    const std::string urlParseRegex =
+    std::string urlParseRegex =
         R"(([a-zA-Z]+)\:\/\/([a-zA-Z0-9\.\-_]+):?([0-9]{1,5})?(\/[a-zA-Z0-9\/\+\-\.\%\/_]*)\??([a-zA-Z0-9\-_\+\=\&\%\.]*))";
     auto res = toolboxpp::strings::matchRegexp(urlParseRegex, url);
     if(res.empty()) {
