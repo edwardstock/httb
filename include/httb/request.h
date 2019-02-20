@@ -148,7 +148,6 @@ class request: public httb::base_request {
 public:
     request() : base_request() { }
     explicit request(const std::string &url) : base_request(url) { }
-    explicit request(std::string &&url): base_request(std::move(url)) { }
     explicit request(const std::string &url, uint16_t port) : base_request(url, port) { }
     request(const std::string &url, base_request::method method) : base_request(url, method) { }
 

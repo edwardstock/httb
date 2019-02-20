@@ -62,10 +62,12 @@ httb::base_request::base_request(const std::string &url, httb::base_request::met
 void httb::base_request::parseUrl(const std::string &url) {
     std::string urlParseRegex =
         R"(([a-zA-Z]+)\:\/\/([a-zA-Z0-9\.\-_]+):?([0-9]{1,5})?(\/[a-zA-Z0-9\/\+\-\.\%\/_]*)\??([a-zA-Z0-9\-_\+\=\&\%\.]*))";
+
     auto res = toolboxpp::strings::matchRegexp(urlParseRegex, url);
-    if(res.empty()) {
+    if(!toolboxpp::strings::hasRegex(urlParseRegex, url) || res.empty()) {
         return;
     }
+
     m_proto = res[1];
     m_host = res[2];
     std::string port = res[3];
