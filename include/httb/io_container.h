@@ -20,12 +20,12 @@ public:
     io_container();
 
     virtual /// \brief Set request body data
-    /// \param body string data for request/response
-    void setBody(const std::string &body);
+    /// \param data string data for request/response
+    void setBody(const std::string &data);
 
     virtual /// \brief Move request body data
-    /// \param body string data for request/response
-    void setBody(std::string &&body);
+    /// \param data string data for request/response
+    void setBody(std::string &&data);
 
     /// \brief Set header. Overwrites if already contains
     /// \param keyValue std::pair<std::string, std::string>

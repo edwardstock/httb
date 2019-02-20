@@ -7,21 +7,21 @@
  * \link   https://github.com/edwardstock
  */
 
-#include <toolboxpp.h>
+#include <toolboxpp.hpp>
 #include <boost/utility/string_view.hpp>
 #include "httb/io_container.h"
 #include "helpers.hpp"
 
 
 // BASE IO
-httb::io_container::io_container() :
-    body() { }
-void httb::io_container::setBody(const std::string &body) {
-    this->body = body;
+httb::io_container::io_container() : body() { }
+
+void httb::io_container::setBody(const std::string &data) {
+    this->body = data;
     setHeader({"Content-Length", httb::utils::toString(this->body.length())});
 }
-void httb::io_container::setBody(std::string &&body) {
-    this->body = std::move(body);
+void httb::io_container::setBody(std::string &&data) {
+    this->body = std::move(data);
     setHeader({"Content-Length", httb::utils::toString(this->body.length())});
 }
 void httb::io_container::setHeader(httb::kv &&keyValue) {
@@ -79,7 +79,7 @@ void httb::io_container::addHeader(const boost::string_view &key, const boost::s
     addHeader(key.to_string(), value.to_string());
 }
 void httb::io_container::addHeader(const httb::kv &keyValue) {
-    headers.push_back(std::move(keyValue));
+    headers.push_back(keyValue);
 }
 void httb::io_container::addHeader(httb::kv &&keyValue) {
     headers.push_back(std::move(keyValue));
@@ -122,7 +122,7 @@ std::vector<std::string> httb::io_container::getHeadersGlued() const {
 
     std::stringstream ss;
     int i = 0;
-    for (auto h: headers) {
+    for (const auto &h: headers) {
         ss << h.first << ": " << h.second;
         out[i] = ss.str();
         ss.str("");

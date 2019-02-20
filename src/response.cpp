@@ -7,7 +7,7 @@
  * \link   https://github.com/edwardstock
  */
 
-#include <toolboxpp.h>
+#include <toolboxpp.hpp>
 #include "httb/defs.h"
 #include "httb/response.h"
 
