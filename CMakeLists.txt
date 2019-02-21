@@ -74,9 +74,6 @@ target_link_libraries(${PROJECT_NAME} CONAN_PKG::boost_asio)
 target_link_libraries(${PROJECT_NAME} CONAN_PKG::boost_system)
 target_link_libraries(${PROJECT_NAME} CONAN_PKG::boost_filesystem)
 
-target_link_libraries(${PROJECT_NAME} CONAN_PKG::pcre)
-target_include_directories(${PROJECT_NAME} INTERFACE ${CONAN_INCLUDE_DIRS_PCRE})
-
 target_link_libraries(${PROJECT_NAME} toolboxpp)
 target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/libs/toolboxpp/include)
 
