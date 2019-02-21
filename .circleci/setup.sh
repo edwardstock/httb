@@ -26,12 +26,12 @@ fi
 
 if [ ! -f "/usr/bin/conan" ]
 then
-    if [ ! -f "/tmp/conan.deb" ]
+    if [ ! -f "./conan.deb" ]
     then
-        curl https://dl.bintray.com/conan/installers/conan-ubuntu-64_1_12_3.deb -o /tmp/conan.deb
+        curl https://dl.bintray.com/conan/installers/conan-ubuntu-64_1_12_3.deb -o ./conan.deb
     fi
 
-    dpkg -i /tmp/conan.deb
+    dpkg -i ./conan.deb
 fi
 
 # fetching cmake

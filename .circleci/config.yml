@@ -14,6 +14,10 @@ jobs:
           command: sh .circleci/setup.sh
       - run: mkdir -p build
       - run: cd build && cmake .. -DCMAKE_BUILD_TYPE=Debug -DWITH_TEST=ON
+      - save_cache:
+          key: conan_dir
+          paths:
+            - /root/.conan
       - run: cmake --build ./build
       - run: cmake --build ./build --target httb-test
       - run:
