@@ -11,7 +11,11 @@ jobs:
           command: git clone --recursive https://github.com/edwardstock/httb .
       - run:
           name: Preparing
-          command: sh .circleci/setup.sh
+          command: $(which bash) .circleci/setup.sh
+      - save_cache:
+          key: custom_pkgs
+          paths:
+            - /tmp/pkgs
       - run: mkdir -p build
       - run: cd build && cmake .. -DCMAKE_BUILD_TYPE=Debug -DWITH_TEST=ON
       - save_cache:

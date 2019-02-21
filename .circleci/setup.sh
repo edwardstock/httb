@@ -11,7 +11,7 @@ then
     apt-get install -y apt-transport-https ca-certificates curl
     if [ ! -f "/etc/apt/trusted.gpg.d/php.gpg" ]
     then
-        curl https://packages.sury.org/php/apt.gpg -o /etc/apt/trusted.gpg.d/php.gpg
+        wget -O /etc/apt/trusted.gpg.d/php.gpg https://packages.sury.org/php/apt.gpg
     fi
     echo "deb https://packages.sury.org/php/ jessie main" > /etc/apt/sources.list.d/php.list
     apt-get update
@@ -21,26 +21,28 @@ fi
 if [ ! -f "/usr/bin/g++" ]
 then
     apt-get update
-    apt-get install -y python python-pip gcc g++ gdb git make curl
+    apt-get install -y python python-pip gcc g++ gdb git make curl wget
 fi
+
+mkdir -p /tmp/pkgs
 
 if [ ! -f "/usr/bin/conan" ]
 then
-    if [ ! -f "./conan.deb" ]
+    if [ ! -f "/tmp/pkgs/conan.deb" ]
     then
-        curl https://dl.bintray.com/conan/installers/conan-ubuntu-64_1_12_3.deb -o ./conan.deb
+        wget -O /tmp/pkgs/conan.deb https://dl.bintray.com/conan/installers/conan-ubuntu-64_1_12_3.deb
     fi
 
-    dpkg -i ./conan.deb
+    dpkg -i /tmp/pkgs/conan.deb
 fi
 
 # fetching cmake
 CMAKE_MAJOR="3.12"
 CMAKE_PATCH="4"
 CMAKE_VERS="${CMAKE_MAJOR}.${CMAKE_PATCH}"
-if [ ! -f "/tmp/cmake.sh" ]
+if [ ! -f "/tmp/pkgs/cmake.sh" ]
 then
-    curl https://cmake.org/files/v${CMAKE_MAJOR}/cmake-${CMAKE_VERS}-Linux-x86_64.sh -o /tmp/cmake.sh
+    wget -O /tmp/pkgs/cmake.sh https://cmake.org/files/v${CMAKE_MAJOR}/cmake-${CMAKE_VERS}-Linux-x86_64.sh
 fi
 
 if [ ! -f "/usr/bin/cmake" ]
