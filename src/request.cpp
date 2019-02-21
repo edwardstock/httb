@@ -8,7 +8,8 @@
  */
 
 #include <string>
-#include <toolboxpp.h>
+#include <boost/regex.hpp>
+#include <toolboxpp.hpp>
 #include "httb/request.h"
 #include "helpers.hpp"
 
@@ -21,7 +22,6 @@ httb::base_request::base_request():
     m_host(""),
     m_port("80"),
     m_path("/") {
-
 }
 
 httb::base_request::base_request(const std::string &url) :
@@ -59,12 +59,25 @@ httb::base_request::base_request(const std::string &url, httb::base_request::met
     parseUrl(url);
 }
 
+inline std::vector<std::string> mreg(const boost::regex &re, const std::string &source) {
+    boost::smatch result;
+    boost::regex_search(source, result, re);
+
+    std::vector<std::string> out(result.size());
+    const size_t cnt = result.size();
+    for (size_t i = 0; i < cnt; i++) {
+        out[i] = result[i];
+    }
+
+    return out;
+}
+
 void httb::base_request::parseUrl(const std::string &url) {
     std::string urlParseRegex =
-        R"(([a-zA-Z]+)\:\/\/([a-zA-Z0-9\.\-_]+):?([0-9]{1,5})?(\/[a-zA-Z0-9\/\+\-\.\%\/_]*)\??([a-zA-Z0-9\-_\+\=\&\%\.]*))";
+        R"(([a-zA-Z]+)\:\/\/([a-zA-Z0-9\.\-_]+)?\:?([0-9]{1,5})?(\/[a-zA-Z0-9\/\+\-\.\%\/_]*)\??([a-zA-Z0-9\-_\+\=\&\%\.]*))";
 
-    auto res = toolboxpp::strings::matchRegexp(urlParseRegex, url);
-    if(!toolboxpp::strings::hasRegex(urlParseRegex, url) || res.empty()) {
+    auto res = mreg(boost::regex(urlParseRegex), url);
+    if(!toolboxpp::strings::hasRegex(urlParseRegex, url)) {
         return;
     }
 

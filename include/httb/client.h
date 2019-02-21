@@ -13,7 +13,6 @@
 #include <iostream>
 #include <istream>
 #include <ostream>
-#include <boost/algorithm/string/trim.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/asio.hpp>
 #include <boost/system/error_code.hpp>

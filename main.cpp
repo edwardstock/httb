@@ -1,5 +1,4 @@
 #include <iostream>
-#include <boost/thread.hpp>
 #include <memory>
 #include <array>
 #include <cstdio>

@@ -1,0 +1,19 @@
+version: 2
+jobs:
+  build:
+    docker:
+      - image: debian:jessie
+    steps:
+      - run:
+          name: Cloning repo
+          command: git clone --recursive https://github.com/edwardstock/httb .
+      - run:
+          name: Preparing
+          command: sh .circleci/setup.sh
+      - run: mkdir -p build
+      - run: cmake . ./build -DCMAKE_BUILD_TYPE=Debug -DWITH_TEST=ON
+      - run: cmake --build ./build
+      - run: cmake --build ./build --target httb-test
+      - run:
+          name: Testing
+          command: ./build/bin/httb-test
