@@ -15,10 +15,11 @@ jobs:
       - run:
           name: Preparing
           command: $(which bash) .circleci/setup.sh
-      - save_cache:
-          key: custom_pkgs
-          paths:
-            - /tmp/pkgs
+      #      - save_cache:
+      #          key: custom_pkgs
+      #          paths:
+      #            - /tmp/pkgs
+      - run: conan remote add bincrafters https://api.bintray.com/conan/bincrafters/public-conan
       - run: mkdir -p build
       - run: export CC=/usr/bin/gcc
       - run: export CXX=/usr/bin/g++
@@ -26,10 +27,10 @@ jobs:
           name: Configuring
           command: cd build && cmake .. -DCMAKE_BUILD_TYPE=Debug -DWITH_TEST=ON
 
-      - save_cache:
-          key: conan_dir
-          paths:
-            - /root/.conan
+      #      - save_cache:
+      #          key: conan_dir
+      #          paths:
+      #            - /root/.conan
       - run: cmake --build ./build
       - run: cmake --build ./build --target httb-test
       - run:
