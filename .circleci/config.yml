@@ -17,13 +17,13 @@ jobs:
           paths:
             - /tmp/pkgs
       - run: mkdir -p build
+      - run: export CC=/usr/bin/gcc
+      - run: export CXX=/usr/bin/g++
       - run: cd build && cmake .. -DCMAKE_BUILD_TYPE=Debug -DWITH_TEST=ON
       - save_cache:
           key: conan_dir
           paths:
             - /root/.conan
-      - run: export CC=/usr/bin/gcc
-      - run: export CXX=/usr/bin/g++
       - run: cmake --build ./build
       - run: cmake --build ./build --target httb-test
       - run:
