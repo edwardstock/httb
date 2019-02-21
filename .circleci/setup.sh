@@ -24,7 +24,10 @@ then
     apt-get install -y python python-pip gcc g++ gdb git make curl wget
 fi
 
-mkdir -p /tmp/pkgs
+if [ ! -d "/tmp/pkgs" ]
+then
+    mkdir -p /tmp/pkgs
+fi
 
 if [ ! -f "/usr/bin/conan" ]
 then
