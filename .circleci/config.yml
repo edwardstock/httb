@@ -3,6 +3,9 @@ jobs:
   build:
     docker:
       - image: debian:jessie
+      environment:
+        CXX: /usr/bin/g++
+        CC: /usr/bin/gcc
     steps:
       - run: apt-get update
       - run: apt-get install -y git
@@ -19,7 +22,10 @@ jobs:
       - run: mkdir -p build
       - run: export CC=/usr/bin/gcc
       - run: export CXX=/usr/bin/g++
-      - run: cd build && cmake .. -DCMAKE_BUILD_TYPE=Debug -DWITH_TEST=ON
+      - run:
+          name: Configuring
+          command: cd build && cmake .. -DCMAKE_BUILD_TYPE=Debug -DWITH_TEST=ON
+
       - save_cache:
           key: conan_dir
           paths:
