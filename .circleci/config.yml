@@ -22,6 +22,8 @@ jobs:
           key: conan_dir
           paths:
             - /root/.conan
+      - run: export CC=/usr/bin/gcc
+      - run: export CXX=/usr/bin/g++
       - run: cmake --build ./build
       - run: cmake --build ./build --target httb-test
       - run:
