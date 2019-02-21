@@ -2,3 +2,6 @@ cmake-build-*
 tests/mock/test_*
 tests/mock/*.pid
 tests/mock/*.log
+conan/*
+!conan/conan.cmake
+*.o

@@ -1,19 +1,44 @@
 cmake_minimum_required(VERSION 3.0)
 project(httb
-        VERSION 1.0.0
+        VERSION 0.1.0
         DESCRIPTION "Simple C++ Boost HTTP client"
         HOMEPAGE_URL "https://github.com/edwardstock/httb"
         LANGUAGES CXX
         )
 
-add_definitions(-DHTTB_VERSION="${CMAKE_PROJECT_VERSION}")
+include(cmake-modules/conan.cmake)
+
+conan_cmake_run(
+	CONANFILE conanfile.txt
+	BUILD missing
+	BASIC_SETUP
+)
+
+# CONAN
+if (EXISTS ${CMAKE_CURRENT_BINARY_DIR}/conanbuildinfo.cmake)
+	include(${CMAKE_CURRENT_BINARY_DIR}/conanbuildinfo.cmake)
+	conan_basic_setup(TARGETS)
+else ()
+	message(WARNING "The file ${CMAKE_CURRENT_BINARY_DIR}/conanbuildinfo.cmake doesn't exist, you have to run conan install first")
+endif ()
 
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_DEBUG_POSTFIX "" CACHE STRING "postfix")
 
 option(WITH_TESTS "Enable tests" OFF)
 
-include_directories(include)
+### BOOST
+#if (NOT BOOST_ROOT)
+#	set(BOOST_ROOT ${CONAN_BOOST_ROOT})
+#endif ()
+set(Boost_DEBUG OFF)
+set(Boost_USE_STATIC_LIBS ON)
+set(Boost_USE_MULTITHREADED ON)
+
+#Toolbox
+if (NOT TARGET toolboxpp)
+	add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/libs/toolboxpp)
+endif ()
 
 set(SOURCES
     src/client.cpp
@@ -34,49 +59,46 @@ set(SOURCES
     src/body_string.cpp)
 
 add_library(${PROJECT_NAME} STATIC ${SOURCES})
+target_compile_definitions(${PROJECT_NAME} PUBLIC -DHTTB_VERSION="${CMAKE_PROJECT_VERSION}")
 
-target_compile_options(${PROJECT_NAME} PUBLIC -pedantic -Wall -Wsign-compare -Wunused-parameter)
+include_directories(cmake-modules/PlatformDetector.cmake)
+target_compile_options(${PROJECT_NAME} PUBLIC -fPIC -pedantic -Wall -Wsign-compare -Wunused-parameter)
 
-## BOOST
-set(Boost_DEBUG OFF)
-set(Boost_USE_STATIC_LIBS ON)
-set(Boost_USE_MULTITHREADED ON)
-find_package(Boost 1.54.0 COMPONENTS system thread random filesystem REQUIRED)
-target_link_libraries(${PROJECT_NAME} ${Boost_LIBRARIES})
-target_include_directories(${PROJECT_NAME} PUBLIC ${Boost_INCLUDE_DIR})
+target_include_directories(${PROJECT_NAME} PUBLIC include)
 
-#OpenSSL
-string(TOLOWER ${CMAKE_SYSTEM_NAME} SYSTEM_LOWER)
-if (NOT OPENSSL_ROOT_DIR)
-	set(OPENSSL_ROOT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/libs/openssl/${SYSTEM_LOWER}_${CMAKE_SYSTEM_PROCESSOR}")
-endif ()
-set(OPENSSL_USE_STATIC_LIBS ON)
-find_package(OpenSSL 1.1.0 REQUIRED)
+#target_link_libraries(${PROJECT_NAME} ${Boost_LIBRARIES})
+#target_include_directories(${PROJECT_NAME} PUBLIC ${Boost_INCLUDE_DIR})
+target_link_libraries(${PROJECT_NAME} CONAN_PKG::boost_beast)
+target_link_libraries(${PROJECT_NAME} CONAN_PKG::boost_regex)
+target_link_libraries(${PROJECT_NAME} CONAN_PKG::boost_asio)
+target_link_libraries(${PROJECT_NAME} CONAN_PKG::boost_system)
+target_link_libraries(${PROJECT_NAME} CONAN_PKG::boost_filesystem)
 
-if (NOT TARGET toolboxpp)
-	add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/libs/toolboxpp)
-endif ()
+target_link_libraries(${PROJECT_NAME} CONAN_PKG::pcre)
+target_include_directories(${PROJECT_NAME} INTERFACE ${CONAN_INCLUDE_DIRS_PCRE})
+
 target_link_libraries(${PROJECT_NAME} toolboxpp)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/toolboxpp/include)
+target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/libs/toolboxpp/include)
 
-target_link_libraries(${PROJECT_NAME} ${OPENSSL_LIBRARIES})
-target_include_directories(${PROJECT_NAME} PUBLIC ${OPENSSL_INCLUDE_DIR})
-message(STATUS "OpenSSL ${OPENSSL_VERSION} (${OPENSSL_LIBRARIES})")
+target_link_libraries(${PROJECT_NAME} CONAN_PKG::OpenSSL)
 
 
 add_executable(${PROJECT_NAME}-bin main.cpp)
-
 target_link_libraries(${PROJECT_NAME}-bin ${PROJECT_NAME})
 
 if (WITH_TESTS)
 	add_definitions(-DTEST_ROOT="${CMAKE_CURRENT_SOURCE_DIR}/tests")
 	set(PROJECT_NAME_TEST ${PROJECT_NAME}-test)
-	include_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/googletest/googletest/include)
-	include_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/googletest/googlemock/include)
-	set(GTEST_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/libs/googletest/googletest)
 
-	include_directories(${GTEST_SOURCE_DIR}/include ${GTEST_SOURCE_DIR})
-	add_subdirectory(${GTEST_SOURCE_DIR})
+	execute_process(
+		COMMAND "chmod +x ${CMAKE_CURRENT_SOURCE_DIR}/tests/mock/run-server.sh"
+		ERROR_VARIABLE MK_EXEC_TEST_ERR
+	)
+
+	if (MK_EXEC_TEST_ERR)
+		message(FATAL_ERROR ${MK_EXEC_TEST_ERR})
+	endif ()
+
 	if (WIN32)
 		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++0x")
 	elseif (APPLE)
@@ -84,11 +106,7 @@ if (WITH_TESTS)
 		add_definitions(-D__GLIBCXX__)
 	endif ()
 
-
-	add_executable(${PROJECT_NAME_TEST} ${SERVER_EXEC_SRCS}
-	               #               tests/base/TestAuth.cpp
-	               tests/HttpClientTest.cpp
-	               )
+	add_executable(${PROJECT_NAME_TEST} tests/HttpClientTest.cpp)
 	target_compile_options(${PROJECT_NAME_TEST} PUBLIC -Wno-unused-parameter)
 
 	target_link_libraries(${PROJECT_NAME_TEST} ${PROJECT_NAME})
@@ -96,7 +114,7 @@ if (WITH_TESTS)
 	include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src)
 	target_include_directories(${PROJECT_NAME_TEST} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
 
-	target_link_libraries(${PROJECT_NAME_TEST} gtest gtest_main)
+	target_link_libraries(${PROJECT_NAME_TEST} CONAN_PKG::gtest)
 
 	if (WITH_COVERAGE)
 		set(COVERAGE_LCOV_EXCLUDES
