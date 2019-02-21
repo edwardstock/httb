@@ -12,26 +12,30 @@ jobs:
       - run:
           name: Cloning repo
           command: git clone --recursive https://github.com/edwardstock/httb .
+      - restore_cache:
+          keys:
+            - custom-pkgs-{{ checksum ".circleci/setup.sh" }}
       - run:
           name: Preparing
           command: $(which bash) .circleci/setup.sh
-      #      - save_cache:
-      #          key: custom_pkgs
-      #          paths:
-      #            - /tmp/pkgs
+      - save_cache:
+          key: custom-pkgs-{{ checksum ".circleci/setup.sh" }}
+          paths:
+            - /tmp/pkgs
       - run: conan remote add bincrafters https://api.bintray.com/conan/bincrafters/public-conan
       - run: mkdir -p build
       - run: export CC=/usr/bin/gcc
       - run: export CXX=/usr/bin/g++
+      - restore_cache:
+          keys:
+            - conan-dir-{{ checksum "conanfile.txt" }}
       - run:
           name: Configuring
           command: cd build && cmake .. -DCMAKE_BUILD_TYPE=Debug -DWITH_TEST=ON
-
-      #      - save_cache:
-      #          key: conan_dir
-      #          paths:
-      #            - /root/.conan
-      - run: cmake --build ./build
+      - save_cache:
+          key: conan-dir-{{ checksum "conanfile.txt" }}
+          paths:
+            - /root/.conan
       - run: cmake --build ./build --target httb-test
       - run:
           name: Testing

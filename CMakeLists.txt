@@ -87,7 +87,7 @@ target_link_libraries(${PROJECT_NAME} CONAN_PKG::OpenSSL)
 add_executable(${PROJECT_NAME}-bin main.cpp)
 target_link_libraries(${PROJECT_NAME}-bin ${PROJECT_NAME})
 
-if (WITH_TESTS)
+if (WITH_TEST)
 	add_definitions(-DTEST_ROOT="${CMAKE_CURRENT_SOURCE_DIR}/tests")
 	set(PROJECT_NAME_TEST ${PROJECT_NAME}-test)
 
