@@ -4,6 +4,7 @@ jobs:
     docker:
       - image: debian:jessie
     steps:
+      - run: apt-get install -y git
       - run:
           name: Cloning repo
           command: git clone --recursive https://github.com/edwardstock/httb .
