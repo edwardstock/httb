@@ -4,6 +4,7 @@ jobs:
     docker:
       - image: debian:jessie
     steps:
+      - run: apt-get update
       - run: apt-get install -y git
       - run:
           name: Cloning repo
