@@ -47,7 +47,7 @@ fi
 
 if [ ! -f "/usr/bin/cmake" ]
 then
-    sh /tmp/cmake.sh --skip-license --prefix=/usr
+    sh /tmp/pkgs/cmake.sh --skip-license --prefix=/usr
 fi
 
 
