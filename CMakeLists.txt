@@ -8,6 +8,30 @@ project(httb
 
 include(cmake-modules/conan.cmake)
 
+find_program(CONAN_BIN conan)
+
+if (NOT CONAN_BIN)
+	message(FATAL_ERROR "Conan not found!")
+endif ()
+
+execute_process(
+	COMMAND ${CONAN_BIN} remote add bincrafters https://api.bintray.com/conan/bincrafters/public-conan
+	ERROR_VARIABLE CONAN_ADD_REMOTE_ERR
+	OUTPUT_VARIABLE CONAN_ADD_REMOTE_OUT
+	RESULT_VARIABLE CONAN_ADD_REMOTE_RES
+)
+message(STATUS "Conan: ${CONAN_BIN} remote add bincrafters https://api.bintray.com/conan/bincrafters/public-conan")
+
+if (CONAN_ADD_REMOTE_ERR)
+	message(STATUS "Conan: Add remote error: ${CONAN_ADD_REMOTE_ERR}")
+endif ()
+if (CONAN_ADD_REMOTE_OUT)
+	message(STATUS "Conan: Add remote output: ${CONAN_ADD_REMOTE_OUT}")
+endif ()
+if (CONAN_ADD_REMOTE_RES)
+	message(STATUS "Conan: Add remote res: ${CONAN_ADD_REMOTE_RES}")
+endif ()
+
 conan_add_remote(
 	NAME bincrafters
 	URL https://api.bintray.com/conan/bincrafters/public-conan
