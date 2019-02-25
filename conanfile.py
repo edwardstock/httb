@@ -59,8 +59,7 @@ class HttbConan(ConanFile):
 
     def source(self):
         if "CONAN_LOCAL" not in os.environ:
-            git = tools.Git(folder=".")
-            git.clone("https://github.com/edwardstock/httb.git", "master")
+            self.run("git clone https://github.com/edwardstock/httb.git .")
 
     def build(self):
         cmake = CMake(self)

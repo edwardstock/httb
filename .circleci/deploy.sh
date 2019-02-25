@@ -16,11 +16,15 @@ then
     VERS=${1}
 fi
 
+## Test in testing channel
 conan create . scatter/testing
 conan export . httb/${VERS}@scatter/testing
 conan test . httb/${VERS}@scatter/testing
 
+
+## Deploy in latest channel
 if [ "${NO_DEPLOY}" != "" ]
 then
+    conan create . scatter/latest
     conan upload httb/${VERS}@scatter/latest --all -r=scatter
 fi

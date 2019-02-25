@@ -1,5 +1,13 @@
 #!/usr/bin/env bash
 
+PHP_BIN=`which php | tr -d "\n"`
+
+if [ "${PHP_BIN}" == "" ]
+then
+    echo "PHP: not found"
+    exit 1
+fi
+
 OS_TEST=$(uname | grep Darwin || echo "Linux")
 DD_SUFFIX="M"
 RUN_PATH=${1}
