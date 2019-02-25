@@ -308,6 +308,11 @@ int main(int argc, char **argv) {
     std::this_thread::sleep_for(std::chrono::seconds(2));
     int ret = RUN_ALL_TESTS();
 
+    std::stringstream ss2;
+    ss2 << "$(which curl) -vvv " << "http://localhost:9000/simple-server.php/get";
+    std::cout << ss2.str() << std::endl;
+    std::cout << system(ss2.str().c_str()) << std::endl;
+
     std::stringstream ss;
     ss << "kill -9 " << pid;
     system(ss.str().c_str());
