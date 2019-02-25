@@ -23,8 +23,5 @@ conan test . httb/${VERS}@scatter/testing
 
 
 ## Deploy in latest channel
-if [ "${NO_DEPLOY}" != "" ]
-then
-    conan create . scatter/latest
-    conan upload httb/${VERS}@scatter/latest --all -r=scatter
-fi
+conan create . scatter/latest
+conan upload httb/${VERS}@scatter/latest --all -r=scatter

@@ -1,6 +1,10 @@
 # httb - HyperText Transfer Beast
 Lightweight C++ HTTP Client based on Boost.Beast
 
+| Bintray | Windows | Linux & macOS |
+|:--------:|:---------:|:-----------------:|
+|[ ![Download](https://api.bintray.com/packages/edwardstock/scatter/httb%3Ascatter/images/download.svg) ](https://bintray.com/edwardstock/scatter/httb%3Ascatter/_latestVersion)|unavailable|[![CircleCI](https://circleci.com/gh/edwardstock/httb/tree/master.svg?style=svg)](https://circleci.com/gh/edwardstock/httb/tree/master)|
+
 ## Features
  * Any request type
  * Bundled SSL support (OpenSSL 1.1.1) with system root certs autoloading
