@@ -309,7 +309,7 @@ int main(int argc, char **argv) {
     int ret = RUN_ALL_TESTS();
 
     std::stringstream ss2;
-    ss2 << "$(which curl) -vvv " << "http://localhost:9000/simple-server.php/get";
+    ss2 << "$(which curl) -vvv " << "http://127.0.0.1:9000/simple-server.php/get";
     std::cout << ss2.str() << std::endl;
     std::cout << system(ss2.str().c_str()) << std::endl;
 

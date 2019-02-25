@@ -35,7 +35,7 @@ then
     fi
 fi
 
-php -S localhost:9000 \
+php -S 127.0.0.1:9000 \
     -d post_max_size=100M \
     -d upload_max_filesize=100M \
     -d display_errors=on \
