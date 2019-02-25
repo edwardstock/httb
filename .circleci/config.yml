@@ -25,6 +25,7 @@ jobs:
       - run: pip3 install setuptools -U
       - run: pip3 install conan
       - run: conan remote add scatter https://api.bintray.com/conan/edwardstock/scatter
+      - run: conan remote add bincrafters https://api.bintray.com/conan/bincrafters/public-conan
       - run: conan user -p $BINTRAY_API_KEY -r scatter edwardstock
       - run: mkdir -p _build
       - run: export CC=/usr/bin/gcc
