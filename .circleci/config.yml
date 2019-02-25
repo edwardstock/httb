@@ -34,12 +34,12 @@ jobs:
             - conan-dir-{{ checksum "conanfile.txt" }}
       - run:
           name: Configuring
-          command: cd build && cmake .. -DCMAKE_BUILD_TYPE=Debug -DWITH_TEST=ON
+          command: cd _build && cmake .. -DCMAKE_BUILD_TYPE=Debug -DWITH_TEST=ON
       - save_cache:
           key: conan-dir-{{ checksum "conanfile.txt" }}
           paths:
             - /root/.conan
-      - run: cmake --build ./build --target httb-test
+      - run: cmake --build ./_build --target httb-test
       - run:
           name: Testing
           command: $(which bash) .circleci/test.sh
