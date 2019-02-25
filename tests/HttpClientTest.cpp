@@ -313,6 +313,13 @@ int main(int argc, char **argv) {
     std::cout << ss2.str() << std::endl;
     std::cout << system(ss2.str().c_str()) << std::endl;
 
+    ss2.str("");
+    ss2.clear();
+
+    ss2 << "cat " << TEST_ROOT << "/mock/run.log";
+    std::cout << ss2.str() << std::endl;
+    std::cout << system(ss2.str().c_str()) << std::endl;
+
     std::stringstream ss;
     ss << "kill -9 " << pid;
     system(ss.str().c_str());
