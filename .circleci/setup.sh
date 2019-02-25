@@ -21,7 +21,7 @@ fi
 if [ ! -f "/usr/bin/g++" ]
 then
     apt-get update
-    apt-get install -y python python-pip gcc g++ gdb git make curl wget
+    apt-get install -y python python3 python3-pip gcc g++ gdb git make curl wget
 fi
 
 if [ ! -d "/tmp/pkgs" ]
@@ -29,15 +29,15 @@ then
     mkdir -p /tmp/pkgs
 fi
 
-if [ ! -f "/usr/bin/conan" ]
-then
-    if [ ! -f "/tmp/pkgs/conan.deb" ]
-    then
-        wget -O /tmp/pkgs/conan.deb https://dl.bintray.com/conan/installers/conan-ubuntu-64_1_12_3.deb
-    fi
-
-    dpkg -i /tmp/pkgs/conan.deb
-fi
+#if [ ! -f "/usr/bin/conan" ]
+#then
+#    if [ ! -f "/tmp/pkgs/conan.deb" ]
+#    then
+#        wget -O /tmp/pkgs/conan.deb https://dl.bintray.com/conan/installers/conan-ubuntu-64_1_12_3.deb
+#    fi
+#
+#    dpkg -i /tmp/pkgs/conan.deb
+#fi
 
 # fetching cmake
 CMAKE_MAJOR="3.12"

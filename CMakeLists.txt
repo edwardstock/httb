@@ -6,67 +6,20 @@ project(httb
         LANGUAGES CXX
         )
 
-include(cmake-modules/conan.cmake)
-
-find_program(CONAN_BIN conan)
-
-if (NOT CONAN_BIN)
-	message(FATAL_ERROR "Conan not found!")
-endif ()
-
 execute_process(
-	COMMAND ${CONAN_BIN} remote add bincrafters https://api.bintray.com/conan/bincrafters/public-conan
-	ERROR_VARIABLE CONAN_ADD_REMOTE_ERR
-	OUTPUT_VARIABLE CONAN_ADD_REMOTE_OUT
-	RESULT_VARIABLE CONAN_ADD_REMOTE_RES
-)
-message(STATUS "Conan: ${CONAN_BIN} remote add bincrafters https://api.bintray.com/conan/bincrafters/public-conan")
-
-if (CONAN_ADD_REMOTE_ERR)
-	message(STATUS "Conan: Add remote error: ${CONAN_ADD_REMOTE_ERR}")
-endif ()
-if (CONAN_ADD_REMOTE_OUT)
-	message(STATUS "Conan: Add remote output: ${CONAN_ADD_REMOTE_OUT}")
-endif ()
-if (CONAN_ADD_REMOTE_RES)
-	message(STATUS "Conan: Add remote res: ${CONAN_ADD_REMOTE_RES}")
-endif ()
-
-conan_add_remote(
-	NAME bincrafters
-	URL https://api.bintray.com/conan/bincrafters/public-conan
-)
-conan_cmake_run(
-	CONANFILE conanfile.txt
-	BUILD missing
-	BASIC_SETUP
+	COMMAND bash -c "echo ${CMAKE_PROJECT_VERSION} > ${CMAKE_CURRENT_SOURCE_DIR}/version"
 )
 
-# CONAN
-if (EXISTS ${CMAKE_CURRENT_BINARY_DIR}/conanbuildinfo.cmake)
-	include(${CMAKE_CURRENT_BINARY_DIR}/conanbuildinfo.cmake)
-	conan_basic_setup(TARGETS)
-else ()
-	message(WARNING "The file ${CMAKE_CURRENT_BINARY_DIR}/conanbuildinfo.cmake doesn't exist, you have to run conan install first")
-endif ()
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/modules)
+include(ConanInit)
+
+add_conan_remote(bincrafters https://api.bintray.com/conan/bincrafters/public-conan)
+add_conan_remote(scatter https://api.bintray.com/conan/edwardstock/scatter)
 
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_DEBUG_POSTFIX "" CACHE STRING "postfix")
 
 option(WITH_TESTS "Enable tests" OFF)
-
-### BOOST
-#if (NOT BOOST_ROOT)
-#	set(BOOST_ROOT ${CONAN_BOOST_ROOT})
-#endif ()
-set(Boost_DEBUG OFF)
-set(Boost_USE_STATIC_LIBS ON)
-set(Boost_USE_MULTITHREADED ON)
-
-#Toolbox
-if (NOT TARGET toolboxpp)
-	add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/libs/toolboxpp)
-endif ()
 
 set(SOURCES
     src/client.cpp
@@ -94,22 +47,14 @@ target_compile_options(${PROJECT_NAME} PUBLIC -fPIC -pedantic -Wall -Wsign-compa
 
 target_include_directories(${PROJECT_NAME} PUBLIC include)
 
-#target_link_libraries(${PROJECT_NAME} ${Boost_LIBRARIES})
-#target_include_directories(${PROJECT_NAME} PUBLIC ${Boost_INCLUDE_DIR})
 target_link_libraries(${PROJECT_NAME} CONAN_PKG::boost_beast)
 target_link_libraries(${PROJECT_NAME} CONAN_PKG::boost_regex)
 target_link_libraries(${PROJECT_NAME} CONAN_PKG::boost_asio)
 target_link_libraries(${PROJECT_NAME} CONAN_PKG::boost_system)
 target_link_libraries(${PROJECT_NAME} CONAN_PKG::boost_filesystem)
 
-target_link_libraries(${PROJECT_NAME} toolboxpp)
-target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/libs/toolboxpp/include)
-
+target_link_libraries(${PROJECT_NAME} CONAN_PKG::toolboxpp)
 target_link_libraries(${PROJECT_NAME} CONAN_PKG::OpenSSL)
-
-
-add_executable(${PROJECT_NAME}-bin main.cpp)
-target_link_libraries(${PROJECT_NAME}-bin ${PROJECT_NAME})
 
 if (WITH_TEST)
 	add_definitions(-DTEST_ROOT="${CMAKE_CURRENT_SOURCE_DIR}/tests")

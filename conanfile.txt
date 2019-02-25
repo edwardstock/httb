@@ -1,6 +1,7 @@
 [requires]
 #common
 OpenSSL/1.1.1a@conan/stable
+toolboxpp/2.0.0@scatter/latest
 
 # boost
 boost_system/1.69.0@bincrafters/stable

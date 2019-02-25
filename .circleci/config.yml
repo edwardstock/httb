@@ -22,8 +22,11 @@ jobs:
           key: custom-pkgs-{{ checksum ".circleci/setup.sh" }}
           paths:
             - /tmp/pkgs
-      - run: conan remote add bincrafters https://api.bintray.com/conan/bincrafters/public-conan
-      - run: mkdir -p build
+      - run: pip3 install setuptools -U
+      - run: pip3 install conan
+      - run: conan remote add scatter https://api.bintray.com/conan/edwardstock/scatter
+      - run: conan user -p $BINTRAY_API_KEY -r scatter edwardstock
+      - run: mkdir -p _build
       - run: export CC=/usr/bin/gcc
       - run: export CXX=/usr/bin/g++
       - restore_cache:
@@ -39,4 +42,7 @@ jobs:
       - run: cmake --build ./build --target httb-test
       - run:
           name: Testing
-          command: ./build/bin/httb-test
+          command: $(which bash) .circleci/test.sh
+      - run:
+          name: Deploy
+          command: $(which bash) .circleci/deploy.sh
