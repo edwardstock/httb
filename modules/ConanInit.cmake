@@ -1,5 +1,3 @@
-include(ConanBuild)
-
 find_program(BASH_BIN bash REQUIRED)
 find_program(CONAN_BIN conan REQUIRED)
 find_program(GREP_BIN grep REQUIRED)
@@ -13,15 +11,20 @@ macro (check_conan_remote_exist NAME)
 		RESULT_VARIABLE CONAN_REMOTE_GREP_RES
 	)
 
-	if (CONAN_REMOTE_GREP_ERR OR (CONAN_REMOTE_GREP_RES STREQUAL "1"))
-		message(FATAL_ERROR ${CONAN_REMOTE_GREP_ERR})
+	if (${CONAN_REMOTE_GREP_RES} STREQUAL "")
+		return()
 	endif ()
 
-	set(CONAN_REMOTE_${NAME}_EXISTS 1)
+	if (CONAN_REMOTE_GREP_ERR)
+		message(FATAL_ERROR "[${CONAN_REMOTE_GREP_RES}]${CONAN_REMOTE_GREP_ERR}")
+	endif ()
+
+	set(CONAN_REMOTE_${NAME}_EXISTS 1 PARENT_SCOPE)
 endmacro ()
 
 function (add_conan_remote NAME URL)
 	check_conan_remote_exist(${NAME})
+	message(STATUS "Conan remote ${NAME} exists ${CONAN_REMOTE_${NAME}_EXISTS}")
 	if (CONAN_REMOTE_${NAME}_EXISTS)
 		return()
 	endif ()
@@ -49,15 +52,18 @@ function (add_conan_remote NAME URL)
 	endif ()
 endfunction ()
 
-conan_cmake_run(
-	CONANFILE conanfile.txt
-	BUILD missing
-	BASIC_SETUP
-)
+macro (conan_init)
+	include(ConanBuild)
+	conan_cmake_run(
+		CONANFILE conanfile.txt
+		BUILD missing
+		BASIC_SETUP
+	)
 
-if (EXISTS ${CMAKE_CURRENT_BINARY_DIR}/conanbuildinfo.cmake)
-	include(${CMAKE_CURRENT_BINARY_DIR}/conanbuildinfo.cmake)
-	conan_basic_setup(TARGETS)
-else ()
-	message(WARNING "The file ${CMAKE_CURRENT_BINARY_DIR}/conanbuildinfo.cmake doesn't exist, you have to run conan install first")
-endif ()
+	if (EXISTS ${CMAKE_CURRENT_BINARY_DIR}/conanbuildinfo.cmake)
+		include(${CMAKE_CURRENT_BINARY_DIR}/conanbuildinfo.cmake)
+		conan_basic_setup(TARGETS)
+	else ()
+		message(WARNING "The file ${CMAKE_CURRENT_BINARY_DIR}/conanbuildinfo.cmake doesn't exist, you have to run conan install first")
+	endif ()
+endmacro ()

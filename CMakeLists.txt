@@ -15,6 +15,7 @@ include(ConanInit)
 
 add_conan_remote(bincrafters https://api.bintray.com/conan/bincrafters/public-conan)
 add_conan_remote(scatter https://api.bintray.com/conan/edwardstock/scatter)
+conan_init()
 
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_DEBUG_POSTFIX "" CACHE STRING "postfix")

@@ -194,6 +194,11 @@ httb::response httb::client::execute(const httb::request &request) {
 
             stream.shutdown(ec);
 
+            if (ec == boost::asio::ssl::error::stream_truncated) {
+                // it's just empty ssl response, not expected but not critical case
+                ec.assign(0, ec.category());
+            }
+
             if (ec == boost::asio::error::eof) {
                 // Rationale:
                 // http://stackoverflow.com/questions/25587403/boost-asio-ssl-async-shutdown-always-finishes-with-an-error
