@@ -114,7 +114,7 @@ bool httb::io_container::hasBody() const {
 bool httb::io_container::hasHeaders() const {
     return !headers.empty();
 }
-httb::kv_vector httb::io_container::getHeaders() const {
+const httb::kv_vector &httb::io_container::getHeaders() const {
     return headers;
 }
 std::vector<std::string> httb::io_container::getHeadersGlued() const {

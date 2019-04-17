@@ -12,6 +12,7 @@
 
 #include <sstream>
 #include <memory>
+#include <unordered_map>
 #include <boost/beast.hpp>
 #include <boost/beast/core.hpp>
 #include <boost/beast/http.hpp>
@@ -35,13 +36,6 @@ public:
     explicit base_request(const std::string &url, uint16_t port);
     base_request(const std::string &url, base_request::method method);
 
-    /// \brief parse query string to vector<KeyValue>. String must not contains hostname or protocol, only query string.
-    /// Example: ?id=1&param=2&someKey=3
-    /// Warning! Keys represented as arrays, will not be recognized as arrays, they will stored as multiple values, of one keys,
-    /// and if you will try to get param only by key using getParam(const std::string&), method will return only first found value, not all.
-    /// \param queryString
-    void parseParamsString(const std::string &queryString);
-
     /// \brief Convert string method name to wss::web::Request::Method
     /// \param methodName case insensitive string
     /// \return if method string will not be recognized, method will return wss::web::Request::Method::GET
@@ -56,10 +50,6 @@ public:
     /// \param method
     void setMethod(method method);
 
-    /// \brief Add query param key-value wss::web::KeyValue
-    /// \param keyValue pair of strings
-    void addParam(kv &&keyValue);
-
     /// \brief Make request using SSL
     /// \param useSSL
     void useSSL(bool useSSL);
@@ -72,23 +62,42 @@ public:
     /// \return pure hostname without protocol and port: google.com, facebook.com etc
     std::string getHost() const;
 
+    /// \brief Set hostname for url
+    /// \param hostname example: google.com
+    void setHost(const std::string &hostname);
+
     /// \brief Retrun port number
     /// \return Default: 80 if url has http://, if url protocol https without explicit port number - 443,
     /// otherwise - custom port number
     uint16_t getPort() const;
 
+    /// \brief Set port number for url
+    /// \param portNumber 16 bit value, range is 0 - 65535
+    void setPort(uint16_t portNumber);
+
     /// \brief Return port number as string
     /// \return the same but string value
     std::string getPortString() const;
-    /**
-     * \brief Protocol name
-     * \return simple name url started from: http, ftp, or what was passed
-     */
+
+    /// \brief Protocol name
+    /// \return simple name url started from: http, ftp, or what was passed
     std::string getProto() const;
+
+    /// \brief Set protocol name, like http or https or ftp
+    /// \param protocolName
+    void setProto(const std::string &protocolName);
 
     /// \brief Url path (not a query params!)
     /// \return for example: "search" for url "https://google.com/search?q=1&c=2.0&etc=bla"
     std::string getPath() const;
+
+    /// \brief Set url path (without query!)
+    /// \param path for example: "/api/v1/get-my-money" for url "https://google.com/api/v1/get-my-money"
+    void setPath(const std::string &path);
+
+    /// \brief Add to existing path new path or just set it
+    /// \param path for example: was "/api/v1/", your'e adding "/user/create", result will: /api/v1/user/create
+    void addPath(const std::string &path);
 
     /// \brief Return Http method name
     /// \return
@@ -98,9 +107,20 @@ public:
     /// \return true if ssl is used
     bool isSSL() const;
 
+    /// \brief parse query string to vector<KeyValue>. String must not contains hostname or protocol, only query string.
+    /// Example: ?id=1&param=2&someKey=3
+    /// Warning! Keys represented as arrays, will not be recognized as arrays, they will stored as multiple values, of one keys,
+    /// and if you will try to get param only by key using getParam(const std::string&), method will return only first found value, not all.
+    /// \param queryString
+    void parseParamsString(const std::string &queryString);
+
     /// \brief Check for at least one query parameter has set
     /// \return
     bool hasParams() const;
+
+    /// \brief Add query param key-value wss::web::KeyValue
+    /// \param keyValue pair of strings
+    void addParam(kv &&keyValue);
 
     /// \brief Check for parameter exists
     /// \param key query parameter name
@@ -113,6 +133,19 @@ public:
     /// \param icase search case sensititvity
     /// \return empty string of parameter did not set
     std::string getParam(const std::string &key, bool icase = true) const;
+
+    /// \brief Remove query paramter by it name and index
+    /// \param key param name ( !!! with braces: [] )
+    /// \param index array index
+    /// \param icase search case sensititvity
+    /// \return true if was removed, false otherwise
+    bool removeParamArrayItem(const std::string &key, size_t index = 0, bool icase = true);
+
+    /// \brief Remove query paramter by it name
+    /// \param key param name
+    /// \param icase use case insensitive search
+    /// \return true if was removed, false otherwise
+    bool removeParam(const std::string &key, bool icase = true);
 
     /// \brief Return multiple entries if param is an array.
     /// For example k[]=k&m[]=k&m=3, will return:
@@ -128,7 +161,7 @@ public:
 
     /// \brief Return copy of passed parameters
     /// \return simple vector with pairs of strings
-    kv_vector getParams() const;
+    const kv_vector &getParams() const;
 
     // Use with carefully
     void parseUrl(const std::string &url);

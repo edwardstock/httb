@@ -14,7 +14,7 @@
 #include "helpers.hpp"
 
 // REQUEST
-httb::base_request::base_request():
+httb::base_request::base_request() :
     io_container(),
     m_ssl(false),
     m_method(method::get),
@@ -35,13 +35,13 @@ httb::base_request::base_request(const std::string &url) :
     parseUrl(url);
 }
 
-httb::base_request::base_request(const std::string &url, uint16_t port):
+httb::base_request::base_request(const std::string &url, uint16_t port) :
     io_container(),
     m_ssl(false),
     m_method(method::get),
     m_proto("http"),
     m_host(""),
-    m_path("/"){
+    m_path("/") {
     std::stringstream ss;
     ss << port;
     m_port = ss.str();
@@ -74,10 +74,10 @@ inline std::vector<std::string> mreg(const boost::regex &re, const std::string &
 
 void httb::base_request::parseUrl(const std::string &url) {
     std::string urlParseRegex =
-        R"(([a-zA-Z]+)\:\/\/([a-zA-Z0-9\.\-_]+)?\:?([0-9]{1,5})?(\/[a-zA-Z0-9\/\+\-\.\%\/_]*)\??([a-zA-Z0-9\-_\+\=\&\%\.]*))";
+        R"(([a-zA-Z]+)\:\/\/([a-zA-Z0-9\.\-_]+)?\:?([0-9]{1,5})?(\/[a-zA-Z0-9\/\+\-\.\%\/_]*)?\??([a-zA-Z0-9\-_\+\=\&\%\.]*))";
 
     auto res = mreg(boost::regex(urlParseRegex), url);
-    if(!toolboxpp::strings::hasRegex(urlParseRegex, url)) {
+    if (!toolboxpp::strings::hasRegex(urlParseRegex, url)) {
         return;
     }
 
@@ -90,12 +90,12 @@ void httb::base_request::parseUrl(const std::string &url) {
     if (toolboxpp::strings::equalsIgnoreCase(m_proto, "https")) {
         m_port = "443";
         m_ssl = true;
-    } else if(toolboxpp::strings::equalsIgnoreCase(m_proto, "ftp")) {
+    } else if (toolboxpp::strings::equalsIgnoreCase(m_proto, "ftp")) {
         m_port = "20";
         m_ssl = false;
     }
 
-    if(!port.empty()) {
+    if (!port.empty()) {
         m_port = port;
     }
 
@@ -175,17 +175,17 @@ std::string httb::base_request::getUrl() const {
 
     ss << m_proto << "://";
     ss << m_host;
-    if(m_port != "80" && m_port != "443") {
+    if (m_port != "80" && m_port != "443") {
         ss << ":" << m_port;
     }
 
-    if(!m_path.empty()) {
+    if (!m_path.empty()) {
         ss << m_path;
-    }  else {
+    } else {
         ss << "/";
     }
 
-    if(hasParams()) {
+    if (hasParams()) {
         ss << getParamsString();
     }
 
@@ -237,6 +237,62 @@ std::string httb::base_request::getParam(const std::string &key, bool icase) con
     return std::string();
 }
 
+bool httb::base_request::removeParamArrayItem(const std::string &key, size_t index, bool icase) {
+    using toolboxpp::strings::equalsIgnoreCase;
+    const auto &cmp = [icase](const std::string &lhs, const std::string &rhs) {
+      if (icase) {
+          return equalsIgnoreCase(lhs, rhs);
+      } else {
+          return lhs == rhs;
+      }
+    };
+
+    size_t foundCount = 0;
+    size_t erasedItems = 0;
+
+    auto it = m_params.begin();
+    while (it != m_params.end()) {
+        if (cmp(it->first, key)) {
+            if (foundCount == index) {
+                it = m_params.erase(it);
+                erasedItems++;
+            } else {
+                ++it;
+            }
+            foundCount++;
+        } else {
+            ++it;
+        }
+    }
+
+    return erasedItems > 0;
+}
+
+bool httb::base_request::removeParam(const std::string &key, bool icase) {
+    using toolboxpp::strings::equalsIgnoreCase;
+    const auto &cmp = [icase](const std::string &lhs, const std::string &rhs) {
+      if (icase) {
+          return equalsIgnoreCase(lhs, rhs);
+      } else {
+          return lhs == rhs;
+      }
+    };
+
+    int foundCount = 0;
+
+    auto it = m_params.begin();
+    while (it != m_params.end()) {
+        if (cmp(it->first, key)) {
+            it = m_params.erase(it);
+            foundCount++;
+        } else {
+            ++it;
+        }
+    }
+
+    return foundCount > 0;
+}
+
 std::vector<std::string> httb::base_request::getParamArray(const std::string &key, bool icase) const {
     std::vector<std::string> out;
 
@@ -276,7 +332,7 @@ std::string httb::base_request::getParamsString() const {
     return combined;
 }
 
-httb::kv_vector httb::base_request::getParams() const {
+const httb::kv_vector &httb::base_request::getParams() const {
     return m_params;
 }
 
@@ -284,9 +340,19 @@ std::string httb::base_request::getHost() const {
     return m_host;
 }
 
+void httb::base_request::setHost(const std::string &hostname) {
+    m_host = hostname;
+}
+
 uint16_t httb::base_request::getPort() const {
     const int port = std::stoi(m_port);
     return (uint16_t) port;
+}
+
+void httb::base_request::setPort(uint16_t portNumber) {
+    std::stringstream ss;
+    ss << portNumber;
+    m_port = ss.str();
 }
 
 std::string httb::base_request::getPortString() const {
@@ -297,8 +363,50 @@ std::string httb::base_request::getProto() const {
     return m_proto;
 }
 
+void httb::base_request::setProto(const std::string &protocolName) {
+    m_proto = protocolName;
+}
+
 std::string httb::base_request::getPath() const {
     return m_path;
+}
+
+void httb::base_request::setPath(const std::string &path) {
+    if (m_path.length() == 0) {
+        m_path = "/";
+    } else if (m_path.length() > 0 && m_path[0] != '/') {
+        m_path = "/" + m_path;
+    }
+
+    if (path.length() > 1 && path[0] != '/') {
+        m_path = "/" + path;
+    } else {
+        m_path = path;
+    }
+}
+
+void httb::base_request::addPath(const std::string &path) {
+    if (path.length() == 0 || (path.length() == 1 && path[0] == '/')) {
+        return;
+    }
+
+    if (m_path.length() == 0) {
+        m_path = "/";
+    }
+
+    if (path[0] == '/') {
+        if (m_path[m_path.length() - 1] == '/') {
+            m_path += path.substr(1, path.length());
+        } else {
+            m_path += path;
+        }
+    } else {
+        if (m_path[m_path.length() - 1] != '/') {
+            m_path += '/' + path;
+        } else {
+            m_path += path;
+        }
+    }
 }
 
 bool httb::base_request::isSSL() const {

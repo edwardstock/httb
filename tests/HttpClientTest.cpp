@@ -29,6 +29,100 @@ TEST(HttpClientTest, TestBuildRequestSimple) {
     ASSERT_STREQ(req.getUrl().c_str(), "http://localhost:9000/simple-server.php/get");
 }
 
+TEST(HttpClientTest, TestRequestSettings) {
+    httb::request req("http://localhost:9000/simple-server.php/get");
+
+    ASSERT_FALSE(req.isSSL());
+    req.useSSL(true);
+    ASSERT_TRUE(req.isSSL());
+
+    req.addParam({"q", "1"});
+    ASSERT_STREQ("http://localhost:9000/simple-server.php/get?q=1", req.getUrl().c_str());
+
+    req.addParam({"something[]", "1"});
+    req.addParam({"something[]", "2"});
+    req.addParam({"something[]", "3"});
+
+    ASSERT_STREQ("http://localhost:9000/simple-server.php/get?q=1&something[]=1&something[]=2&something[]=3",
+                 req.getUrl().c_str());
+
+    req.removeParamArrayItem("something[]", 0);
+    ASSERT_STREQ("http://localhost:9000/simple-server.php/get?q=1&something[]=2&something[]=3", req.getUrl().c_str());
+
+    req.removeParamArrayItem("something[]", 1);
+    ASSERT_STREQ("http://localhost:9000/simple-server.php/get?q=1&something[]=2", req.getUrl().c_str());
+
+    req.removeParam("something[]");
+    ASSERT_STREQ("http://localhost:9000/simple-server.php/get?q=1", req.getUrl().c_str());
+
+    req.addParam({"something[]", "1"});
+    req.addParam({"something[]", "2"});
+    req.addParam({"something[]", "3"});
+    ASSERT_STREQ("http://localhost:9000/simple-server.php/get?q=1&something[]=1&something[]=2&something[]=3",
+                 req.getUrl().c_str());
+
+    req.removeParamArrayItem("something[]", 1);
+    ASSERT_STREQ("http://localhost:9000/simple-server.php/get?q=1&something[]=1&something[]=3", req.getUrl().c_str());
+
+    req.removeParamArrayItem("something[]", 0);
+    ASSERT_STREQ("http://localhost:9000/simple-server.php/get?q=1&something[]=3", req.getUrl().c_str());
+
+    req.removeParamArrayItem("something[]", 10); // overflow
+    ASSERT_STREQ("http://localhost:9000/simple-server.php/get?q=1&something[]=3", req.getUrl().c_str());
+
+    req.removeParamArrayItem("something[]", -10); // underflow
+    ASSERT_STREQ("http://localhost:9000/simple-server.php/get?q=1&something[]=3", req.getUrl().c_str());
+
+    req.setHost("google.com");
+    ASSERT_STREQ("http://google.com:9000/simple-server.php/get?q=1&something[]=3", req.getUrl().c_str());
+
+    req.setPath("api/v1/addresses/0");
+    ASSERT_STREQ("http://google.com:9000/api/v1/addresses/0?q=1&something[]=3", req.getUrl().c_str());
+
+    req.setPath("/api/v1/password");
+    ASSERT_STREQ("http://google.com:9000/api/v1/password?q=1&something[]=3", req.getUrl().c_str());
+
+    req.setPort(8080u);
+    ASSERT_STREQ("http://google.com:8080/api/v1/password?q=1&something[]=3", req.getUrl().c_str());
+
+    ASSERT_TRUE(req.hasParam("q"));
+
+    req.setProto("ftps");
+    ASSERT_STREQ("ftps://google.com:8080/api/v1/password?q=1&something[]=3", req.getUrl().c_str());
+
+    auto params = req.getParams();
+    ASSERT_EQ(2, params.size());
+    ASSERT_STREQ("q", params[0].first.c_str());
+    ASSERT_STREQ("1", params[0].second.c_str());
+    ASSERT_STREQ("something[]", params[1].first.c_str());
+    ASSERT_STREQ("3", params[1].second.c_str());
+}
+
+TEST(HttpRequestTest, TestPathAdding) {
+    httb::request req("http://localhost:9000");
+    req.setPath("search");
+    ASSERT_STREQ("http://localhost:9000/search", req.getUrl().c_str());
+
+    req.setPath("/search");
+    ASSERT_STREQ("http://localhost:9000/search", req.getUrl().c_str());
+
+    req.setPath("/api/v1");
+    ASSERT_STREQ("http://localhost:9000/api/v1", req.getUrl().c_str());
+
+    req.addPath("user/create");
+    ASSERT_STREQ("http://localhost:9000/api/v1/user/create", req.getUrl().c_str());
+
+    req.setPath("api/v1/");
+    ASSERT_STREQ("http://localhost:9000/api/v1/", req.getUrl().c_str());
+
+    req.addPath("user/create");
+    ASSERT_STREQ("http://localhost:9000/api/v1/user/create", req.getUrl().c_str());
+
+    req.setPath("/api/v1/");
+    req.addPath("user/create/");
+    ASSERT_STREQ("http://localhost:9000/api/v1/user/create/", req.getUrl().c_str());
+}
+
 TEST(HttpClientTest, TestBuildRequestGoogleQuery) {
     const std::string src =
         "https://www.google.com/search?q=boost+beast&oq=boost+beast&aqs=chrome.0.69i59l3j69i60l3.2684j1j9&sourceid=chrome&ie=UTF-8";

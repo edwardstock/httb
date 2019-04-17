@@ -111,7 +111,7 @@ public:
     /// \see wss::web::KeyValueVector
     /// \see wss::web::keyValue
     /// \return simple vector of pairs std::vector<KeyValue>
-    httb::kv_vector getHeaders() const;
+    const httb::kv_vector &getHeaders() const;
 
     /// \brief Glue headers and return list of its.
     /// \return vector of strings:
