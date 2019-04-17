@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -e
+set -x
 VERS=`git rev-parse --short HEAD`
 if [ -f "version" ]
 then
@@ -17,9 +18,9 @@ then
 fi
 
 ## Test in testing channel
-conan create . scatter/testing
-conan export . httb/${VERS}@scatter/testing
-conan test . httb/${VERS}@scatter/testing
+#conan create . scatter/testing
+#conan export . httb/${VERS}@scatter/testing
+#conan test . httb/${VERS}@scatter/testing
 
 
 ## Deploy in latest channel
