@@ -25,5 +25,5 @@ fi
 
 ## Deploy in latest channel
 conan create . scatter/latest
-conan export-pkg . httb/${VERS}@scatter/latest
+conan export-pkg . httb/${VERS}@scatter/latest -f
 conan upload httb/${VERS}@scatter/latest --all -r=scatter
