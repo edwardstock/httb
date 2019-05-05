@@ -88,8 +88,12 @@ public:
     void setProto(const std::string &protocolName);
 
     /// \brief Url path (not a query params!)
-    /// \return for example: "search" for url "https://google.com/search?q=1&c=2.0&etc=bla"
+    /// \return for example: "search" for url "https://google.com/search"
     std::string getPath() const;
+
+    /// \brief Url path with prepared query params
+    /// \return for example: "search" for url "https://google.com/search?q=1&c=2.0&etc=bla"
+    std::string getPathWithParams() const;
 
     /// \brief Set url path (without query!)
     /// \param path for example: "/api/v1/get-my-money" for url "https://google.com/api/v1/get-my-money"
@@ -118,9 +122,13 @@ public:
     /// \return
     bool hasParams() const;
 
-    /// \brief Add query param key-value wss::web::KeyValue
+    /// \brief Add query param key-value wss::web::KeyValue. Key can be array! Just set std::pair<std::string,std::string>("arr[]", "v0")
     /// \param keyValue pair of strings
     void addParam(kv &&keyValue);
+
+    /// \brief Add query param key-value (value double type)
+    /// \param keyValue pair of string=>double
+    void addParam(kvd&& keyValue);
 
     /// \brief Check for parameter exists
     /// \param key query parameter name

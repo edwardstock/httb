@@ -75,6 +75,9 @@ class HttbConan(ConanFile):
         self.copy("*.dylib", dst="lib", keep_path=False)
         self.copy("*.a", dst="lib", keep_path=False)
 
+    def package_info(self):
+        self.cpp_info.libs = self.collect_libs()
+
     def test(self):
         cmake = CMake(self)
         cmake.configure(defs={'WITH_TEST': 'On'})

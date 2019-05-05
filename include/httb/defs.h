@@ -20,6 +20,7 @@ namespace httb {
 
 /// \brief Simple std::pair<std::string, std::string>
 using kv = std::pair<std::string, std::string>;
+using kvd = std::pair<std::string, uint64_t>;
 
 /// \brief Simple vector of pairs wss::web::KeyValue
 using kv_vector = std::vector<httb::kv>;

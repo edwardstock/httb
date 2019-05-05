@@ -8,6 +8,7 @@
  */
 
 #include <string>
+#include <sstream>
 #include <boost/regex.hpp>
 #include <toolboxpp.hpp>
 #include "httb/request.h"
@@ -164,6 +165,14 @@ void httb::base_request::setMethod(httb::base_request::method method) {
 
 void httb::base_request::addParam(httb::kv &&keyValue) {
     m_params.push_back(std::move(keyValue));
+}
+
+void httb::base_request::addParam(kvd &&keyValue) {
+    auto tmp = std::move(keyValue);
+    std::stringstream ss;
+    ss << tmp.second;
+
+    addParam({tmp.first, ss.str()});
 }
 
 void httb::base_request::useSSL(bool useSSL) {
@@ -371,6 +380,10 @@ std::string httb::base_request::getPath() const {
     return m_path;
 }
 
+std::string httb::base_request::getPathWithParams() const {
+    return m_path + getParamsString();
+}
+
 void httb::base_request::setPath(const std::string &path) {
     if (m_path.length() == 0) {
         m_path = "/";
@@ -416,7 +429,7 @@ bool httb::base_request::isSSL() const {
 boost::beast::http::request<boost::beast::http::string_body> httb::request::createBeastRequest() const {
     namespace http = boost::beast::http;
 
-    http::request<http::string_body> req{getMethod(), getPath(), 11};
+    http::request<http::string_body> req{getMethod(), getPathWithParams(), 11};
     req.set(http::field::host, getHost());
 
     std::stringstream versionBuilder;

@@ -1,9 +1,25 @@
 <?php
 $html = "This is %s method response!";
+$htmlWithGET = "This is %s method response! Input: %s";
 
 $fhandle = fopen(getcwd()."/run.log", 'a+');
 if(!$fhandle) {
     exit(255);
+}
+
+function arr_to_str($arr) {
+    $out = "";
+    foreach($arr AS $k=>$v) {
+        if(is_array($v)) {
+            $out .= "{$k}[" . arr_to_str($v) . "];";
+        } else {
+            $out .= "{$k}={$v};";
+        }
+        
+    }
+
+    return $out;
+
 }
 
 function getRequestHeaders() {
@@ -28,7 +44,12 @@ try {
 
     fwrite($fhandle, implode("\n", getRequestHeaders())."\n");
     if($rm === 'GET') {
-        echo sprintf($html, $rm);
+        if(sizeof($_GET) > 0) {
+            echo sprintf($htmlWithGET, $rm, arr_to_str($_GET));
+        } else {
+            echo sprintf($html, $rm);
+        }
+        
         fwrite($fhandle, print_r($_GET, true)."\n");
     } else if($rm === 'POST') {
         echo sprintf($html, $rm);

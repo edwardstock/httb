@@ -173,6 +173,26 @@ TEST(HttpClientTest, TestSimpleGet) {
     ASSERT_STREQ(body.c_str(), "This is GET method response!");
 }
 
+TEST(HttpClientTest, TestGetWithParams) {
+    httb::request req("http://localhost:9000/simple-server.php/get");
+    req.addParam({"a", "1"});
+    req.addParam({"b[]", "2"});
+    req.addParam({"c", "three"});
+    req.addParam(httb::kvd{"double_value", 105.3851});
+    req.addParam(httb::kvd{"int_value", 500});
+    httb::client client;
+    client.setEnableVerbose(true);
+    httb::response resp = client.execute(req);
+
+    const std::string body = resp.getBody();
+    if (!resp.isSuccess()) {
+        std::cout << "Error response:" << std::endl;
+        std::cout << body << std::endl;
+    }
+    ASSERT_TRUE(resp.isSuccess());
+    ASSERT_STREQ("This is GET method response! Input: a=1;b[0=2;];c=three;double_value=105;int_value=500;", body.c_str());
+}
+
 TEST(HttpClientTest, TestSimplePost) {
     httb::request req("http://localhost:9000/simple-server.php/post");
     req.setMethod(httb::request::method::post);

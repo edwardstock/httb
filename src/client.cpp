@@ -10,10 +10,17 @@
 #include <future>
 #include <toolboxpp.hpp>
 #include <type_traits>
+#include <boost/asio/connect.hpp>
+#include <boost/asio/ip/tcp.hpp>
+#include <boost/asio/ssl/error.hpp>
+#include <boost/asio/ssl/stream.hpp>
+#include <boost/beast/core/file.hpp>
+#include <boost/beast/version.hpp>
+
 #include "httb/client.h"
 #include "helpers.hpp"
 #include "httb/request.h"
-#include <boost/beast/core/file.hpp>
+
 
 httb::client_base::client_base() :
     m_verboseOutput(&std::cout),
