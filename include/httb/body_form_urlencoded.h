@@ -21,6 +21,7 @@ namespace httb {
 
 class body_form_urlencoded: public httb::request_body {
 public:
+    body_form_urlencoded() = default;
     body_form_urlencoded(const std::string &encodedParamsString);
     body_form_urlencoded(std::string &&encodedParamsString);
 

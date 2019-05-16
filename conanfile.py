@@ -64,7 +64,7 @@ class HttbConan(ConanFile):
 
     def build(self):
         cmake = CMake(self)
-        cmake.configure()
+        cmake.configure(defs={'WITH_TEST': 'Off', 'CMAKE_BUILD_TYPE': 'Release'})
         cmake.build()
 
     def package(self):
