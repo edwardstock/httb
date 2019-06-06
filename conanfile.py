@@ -47,15 +47,9 @@ class HttbConan(ConanFile):
 
     requires = (
         "OpenSSL/1.1.1a@conan/stable",
-        "toolboxpp/2.0.0@scatter/latest",
-        "boost_system/1.69.0@bincrafters/stable",
-        "boost_beast/1.69.0@bincrafters/stable",
-        "boost_regex/1.69.0@bincrafters/stable",
-        "boost_asio/1.69.0@bincrafters/stable",
-        "boost_filesystem/1.69.0@bincrafters/stable",
-        "boost_timer/1.69.0@bincrafters/stable",
+        "toolboxpp/2.2.0@scatter/latest",
+        "boost/1.70.0@conan/stable",
         ("gtest/1.8.1@bincrafters/stable", "private"),
-
     )
 
     def source(self):
