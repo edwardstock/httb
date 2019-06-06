@@ -15,6 +15,7 @@
 #include <httb/httb.h>
 #include <fstream>
 #include <toolboxpp.hpp>
+#include <boost/filesystem.hpp>
 #include "gtest/gtest.h"
 
 TEST(HttpClientTest, TestBuildRequestSimple) {

@@ -12,7 +12,7 @@
 #include <boost/regex.hpp>
 #include <toolboxpp.hpp>
 #include "httb/request.h"
-#include "helpers.hpp"
+#include "httb/helpers.hpp"
 
 // REQUEST
 httb::base_request::base_request() :

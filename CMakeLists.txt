@@ -26,7 +26,7 @@ set(SOURCES
     src/client.cpp
     src/request.cpp
     src/response.cpp
-    src/helpers.hpp
+    include/httb/helpers.hpp
     include/httb/httb.h
     include/httb/io_container.h
     include/httb/defs.h

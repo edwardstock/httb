@@ -18,7 +18,7 @@
 #include <boost/beast/version.hpp>
 
 #include "httb/client.h"
-#include "helpers.hpp"
+#include "httb/helpers.hpp"
 #include "httb/request.h"
 #include "httb/timer.h"
 #include "httb/async_session.h"
