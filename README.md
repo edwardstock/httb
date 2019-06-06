@@ -21,19 +21,37 @@ Lightweight C++ HTTP Client based on Boost.Beast
 ```cpp
 #include <iostream>
 #include <httb/httb.h>
+#include <boost/asio/io_context.hpp>
 
 int main() {
 
     httb::request request("http://localhost:9000/simple-server.php/get");
     httb::client client;
     client.setEnableVerbose(true, std::cout);
-    httb::response resp = client.execute(request);
-    
-    const std::string body = resp.getBody();
-    if(!resp.isSuccess()) {
-        std::cout << "Error response:" << std::endl;
-        std::cout << body << std::endl;
-    }
+
+    // this is a blocking async method, wait for response
+    client.execute(request, [](httb::response resp) {
+        std::cout << "Resp body:    " << resp.getBody() << std::endl;
+        std::cout << "Resp message: " << resp.statusMessage << std::endl;
+    });
+
+
+    // this is 2 simultaneous requests
+    boost::asio::io_context ioctx(2);
+
+    client.executeInContext(ioctx, request, []{httb::response resp} {
+        //...
+    });
+
+    client.executeInContext(ioctx, request, []{httb::response resp} {
+        //...
+    });
+
+    // blocks this thread and wait until requests are complete
+    ioctx.run();
+
+    // Read more about boost asio here
+    // https://www.boost.org/doc/libs/1_69_0/doc/html/boost_asio.html
     
     return 0;
 }
@@ -53,12 +71,12 @@ int main() {
     
     httb::client client;
     client.setEnableVerbose(true);
-    httb::response resp = client.execute(req);
-    
-    if(!resp.isSuccess()) {
-        std::cout << "Error response:" << std::endl;
-        std::cout << resp.getBody() << std::endl;
-    }
+    client.execute(req, [](httb::response resp) {
+        if(!resp.isSuccess()) {
+                std::cout << "Error response:" << std::endl;
+                std::cout << resp.getBody() << std::endl;
+        }
+    });
     
     return 0;
 }
@@ -83,12 +101,12 @@ int main() {
     
     httb::client client;
     client.setEnableVerbose(true);
-    httb::response resp = client.execute(req);
-    
-    if(!resp.isSuccess()) {
-        std::cout << "Error response:" << std::endl;
-        std::cout << resp.getBody() << std::endl;
-    }
+    client.executeBlocking(req, [](httb::response resp){
+        if(!resp.isSuccess()) {
+            std::cout << "Error response:" << std::endl;
+            std::cout << resp.getBody() << std::endl;
+        }
+    });
     
     return 0;
 }

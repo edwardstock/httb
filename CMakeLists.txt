@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.0)
 project(httb
-        VERSION 0.2.2
+        VERSION 0.3.0
         DESCRIPTION "Simple C++ Boost HTTP client"
         HOMEPAGE_URL "https://github.com/edwardstock/httb"
         LANGUAGES CXX
@@ -38,7 +38,7 @@ set(SOURCES
     include/httb/body_form_urlencoded.h
     src/body_form_urlencoded.cpp
     include/httb/body_string.h
-    src/body_string.cpp)
+    src/body_string.cpp src/timer.cpp include/httb/timer.h include/httb/async_session.h)
 
 add_library(${PROJECT_NAME} STATIC ${SOURCES})
 target_compile_definitions(${PROJECT_NAME} PUBLIC -DHTTB_VERSION="${CMAKE_PROJECT_VERSION}")
@@ -48,11 +48,11 @@ target_compile_options(${PROJECT_NAME} PUBLIC -fPIC -pedantic -Wall -Wsign-compa
 
 target_include_directories(${PROJECT_NAME} PUBLIC include)
 
-target_link_libraries(${PROJECT_NAME} CONAN_PKG::boost_beast)
-target_link_libraries(${PROJECT_NAME} CONAN_PKG::boost_regex)
-target_link_libraries(${PROJECT_NAME} CONAN_PKG::boost_asio)
-target_link_libraries(${PROJECT_NAME} CONAN_PKG::boost_system)
-target_link_libraries(${PROJECT_NAME} CONAN_PKG::boost_filesystem)
+target_link_libraries(${PROJECT_NAME} CONAN_PKG::boost)
+#target_link_libraries(${PROJECT_NAME} CONAN_PKG::boost_regex)
+#target_link_libraries(${PROJECT_NAME} CONAN_PKG::boost_asio)
+#target_link_libraries(${PROJECT_NAME} CONAN_PKG::boost_system)
+#target_link_libraries(${PROJECT_NAME} CONAN_PKG::boost_filesystem)
 
 target_link_libraries(${PROJECT_NAME} CONAN_PKG::toolboxpp)
 target_link_libraries(${PROJECT_NAME} CONAN_PKG::OpenSSL)
@@ -77,7 +77,7 @@ if (WITH_TEST)
 		add_definitions(-D__GLIBCXX__)
 	endif ()
 
-	add_executable(${PROJECT_NAME_TEST} tests/HttpClientTest.cpp)
+	add_executable(${PROJECT_NAME_TEST} tests/HttpClientTest.cpp tests/HttpClientNoLocalTest.cpp)
 	target_compile_options(${PROJECT_NAME_TEST} PUBLIC -Wno-unused-parameter)
 
 	target_link_libraries(${PROJECT_NAME_TEST} ${PROJECT_NAME})

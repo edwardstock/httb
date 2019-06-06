@@ -377,11 +377,14 @@ void httb::base_request::setProto(const std::string &protocolName) {
 }
 
 std::string httb::base_request::getPath() const {
+    if(m_path.empty()) {
+        return "/";
+    }
     return m_path;
 }
 
 std::string httb::base_request::getPathWithParams() const {
-    return m_path + getParamsString();
+    return getPath() + getParamsString();
 }
 
 void httb::base_request::setPath(const std::string &path) {

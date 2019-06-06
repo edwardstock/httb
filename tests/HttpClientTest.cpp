@@ -1,5 +1,5 @@
 /*!
- * wsserver.
+ * httb.
  * HttpClientTest.cpp
  *
  * \date 2018
@@ -148,7 +148,7 @@ TEST(HttpClientTest, TestResponseError) {
     httb::request req("http://wtf");
     httb::client client;
     client.setEnableVerbose(true);
-    httb::response resp = client.execute(req);
+    httb::response resp = client.executeBlocking(req);
 
     const std::string body = resp.getBody();
     if (!resp.isSuccess()) {
@@ -162,7 +162,7 @@ TEST(HttpClientTest, TestSimpleGet) {
     httb::request req("http://localhost:9000/simple-server.php/get");
     httb::client client;
     client.setEnableVerbose(true);
-    httb::response resp = client.execute(req);
+    httb::response resp = client.executeBlocking(req);
 
     const std::string body = resp.getBody();
     if (!resp.isSuccess()) {
@@ -182,7 +182,7 @@ TEST(HttpClientTest, TestGetWithParams) {
     req.addParam(httb::kvd{"int_value", 500});
     httb::client client;
     client.setEnableVerbose(true);
-    httb::response resp = client.execute(req);
+    httb::response resp = client.executeBlocking(req);
 
     const std::string body = resp.getBody();
     if (!resp.isSuccess()) {
@@ -190,7 +190,8 @@ TEST(HttpClientTest, TestGetWithParams) {
         std::cout << body << std::endl;
     }
     ASSERT_TRUE(resp.isSuccess());
-    ASSERT_STREQ("This is GET method response! Input: a=1;b[0=2;];c=three;double_value=105;int_value=500;", body.c_str());
+    ASSERT_STREQ("This is GET method response! Input: a=1;b[0=2;];c=three;double_value=105;int_value=500;",
+                 body.c_str());
 }
 
 TEST(HttpClientTest, TestSimplePost) {
@@ -201,7 +202,7 @@ TEST(HttpClientTest, TestSimplePost) {
 
     httb::client client;
     client.setEnableVerbose(true);
-    httb::response resp = client.execute(req);
+    httb::response resp = client.executeBlocking(req);
 
     if (!resp.isSuccess()) {
         std::cout << "Error response:" << std::endl;
@@ -209,6 +210,29 @@ TEST(HttpClientTest, TestSimplePost) {
     }
     ASSERT_TRUE(resp.isSuccess());
     ASSERT_STREQ(resp.getBodyC(), "This is POST method response!");
+}
+
+#include <boost/asio/io_context.hpp>
+
+TEST(HttpClientTest, DownloadFile) {
+    httb::client client;
+    boost::asio::io_context ctx(2);
+
+    client.setEnableVerbose(true);
+    httb::request
+        req("https://raw.githubusercontent.com/MinterTeam/minter-go-node/dev/mainnet/minter-mainnet-1/genesis.json");
+
+    req.addHeader({"Connection", "keep-alive"});
+    req.addHeader({"Cache-Control", "max-age=0"});
+    req.addHeader({"Accept", "*/*"});
+
+    client.executeInContext(ctx, req, [](httb::response resp) {
+        std::cout << "Resp 1 size: " << resp.getBodySize() << std::endl;
+    });
+
+    ctx.run();
+
+
 }
 
 TEST(HttpClientTest, TestSimplePostSmallFile) {
@@ -225,7 +249,7 @@ TEST(HttpClientTest, TestSimplePostSmallFile) {
 
     httb::client client;
     client.setEnableVerbose(true);
-    httb::response resp = client.execute(req);
+    httb::response resp = client.executeBlocking(req);
 
     if (!resp.isSuccess()) {
         std::cout << "Error response:" << std::endl;
@@ -249,7 +273,7 @@ TEST(HttpClientTest, TestSimplePostMediumFile) {
 
     httb::client client;
     client.setEnableVerbose(true);
-    httb::response resp = client.execute(req);
+    httb::response resp = client.executeBlocking(req);
 
     if (!resp.isSuccess()) {
         std::cout << "Error response:" << std::endl;
@@ -273,7 +297,7 @@ TEST(HttpClientTest, TestSimplePostBigFile) {
 
     httb::client client;
     client.setEnableVerbose(true);
-    httb::response resp = client.execute(req);
+    httb::response resp = client.executeBlocking(req);
 
     if (!resp.isSuccess()) {
         std::cout << "Error response:" << std::endl;
@@ -291,7 +315,7 @@ TEST(HttpClientTest, TestSimplePut) {
 
     httb::client client;
     client.setEnableVerbose(true);
-    httb::response resp = client.execute(req);
+    httb::response resp = client.executeBlocking(req);
 
     if (!resp.isSuccess()) {
         std::cout << "Error response:" << std::endl;
@@ -307,7 +331,7 @@ TEST(HttpClientTest, TestSimpleDelete) {
 
     httb::client client;
     client.setEnableVerbose(true);
-    httb::response resp = client.execute(req);
+    httb::response resp = client.executeBlocking(req);
 
     if (!resp.isSuccess()) {
         std::cout << "Error response:" << std::endl;
@@ -319,9 +343,10 @@ TEST(HttpClientTest, TestSimpleDelete) {
 
 TEST(HttpClientTest, TestGetWithRedirectAndDisabledFollow) {
     httb::request
-        req("http://www.boost.org/doc/libs/develop/libs/beast/doc/html/beast/using_http/message_containers.html");
+        req("http://google.com");
     httb::client client;
-    httb::response resp = client.execute(req);
+    client.setFollowRedirects(false);
+    httb::response resp = client.executeBlocking(req);
 
     ASSERT_TRUE(resp.isSuccess());
     ASSERT_EQ(resp.statusCode, 301);
@@ -332,7 +357,7 @@ TEST(HttpClientTest, TestGetWithRedirectAndEnabledFollow) {
         req("http://www.boost.org/doc/libs/develop/libs/beast/doc/html/beast/using_http/message_containers.html");
     httb::client client;
     client.setFollowRedirects(true);
-    httb::response resp = client.execute(req);
+    httb::response resp = client.executeBlocking(req);
 
     ASSERT_TRUE(resp.isSuccess());
     ASSERT_EQ(resp.statusCode, 200);
@@ -343,11 +368,11 @@ TEST(HttpClientTest, TestReusingClientInstance) {
         req("https://www.boost.org/doc/libs/develop/libs/beast/doc/html/beast/using_http/message_containers.html");
     httb::client client;
     client.setFollowRedirects(true);
-    httb::response resp1 = client.execute(req);
+    httb::response resp1 = client.executeBlocking(req);
     ASSERT_TRUE(resp1.isSuccess());
     ASSERT_EQ(resp1.statusCode, 200);
 
-    httb::response resp2 = client.execute(req);
+    httb::response resp2 = client.executeBlocking(req);
     ASSERT_TRUE(resp2.isSuccess());
     ASSERT_EQ(resp2.statusCode, 200);
 }
@@ -359,12 +384,12 @@ TEST(HttpClientTest, TestSimpleAsyncGet) {
     client.setEnableVerbose(true);
     bool executed1, executed2 = false;
     bool responseIsSuccess1, responseIsSuccess2 = false;
-    client.executeAsync(req, [&executed1, &responseIsSuccess1](httb::response response) {
+    client.execute(std::move(req), [&executed1, &responseIsSuccess1](httb::response response) {
       executed1 = true;
       responseIsSuccess1 = response.isSuccess();
       ASSERT_STREQ(response.getBodyC(), "This is GET method response!");
     });
-    client.executeAsync(req2, [&executed2, &responseIsSuccess2](httb::response response) {
+    client.execute(std::move(req2), [&executed2, &responseIsSuccess2](httb::response response) {
       executed2 = true;
       responseIsSuccess2 = response.isSuccess();
       ASSERT_STREQ(response.getBodyC(), "This is GET method response!");
@@ -410,33 +435,45 @@ std::string exec(const char *cmd) {
 }
 
 int main(int argc, char **argv) {
-    std::stringstream ss1;
-    ss1 << "$(which bash) ";
-    ss1 << TEST_ROOT << "/mock/run-server.sh " << TEST_ROOT << "/mock";
+    bool runLocalServer = true;
+    std::string pid;
 
-    std::cout << ss1.str() << std::endl;
-    const std::string pid = exec(ss1.str().c_str());
+    if(argc >= 2 && std::string(argv[1]) == "nolocal") {
+        runLocalServer = false;
+    }
+
+    if(runLocalServer) {
+        std::stringstream ss1;
+        ss1 << "$(which bash) ";
+        ss1 << TEST_ROOT << "/mock/run-server.sh " << TEST_ROOT << "/mock";
+
+        std::cout << ss1.str() << std::endl;
+        pid = exec(ss1.str().c_str());
+    }
 
     ::testing::InitGoogleTest(&argc, argv);
 
     std::this_thread::sleep_for(std::chrono::seconds(2));
     int ret = RUN_ALL_TESTS();
 
-    std::stringstream ss2;
-    ss2 << "$(which curl) -vvv " << "http://127.0.0.1:9000/simple-server.php/get";
-    std::cout << ss2.str() << std::endl;
-    std::cout << system(ss2.str().c_str()) << std::endl;
+    if(runLocalServer) {
+        std::stringstream ss2;
+        ss2 << "$(which curl) -vvv " << "http://127.0.0.1:9000/simple-server.php/get";
+        std::cout << ss2.str() << std::endl;
+        std::cout << system(ss2.str().c_str()) << std::endl;
 
-    ss2.str("");
-    ss2.clear();
+        ss2.str("");
+        ss2.clear();
 
-    ss2 << "cat " << TEST_ROOT << "/mock/run.log";
-    std::cout << ss2.str() << std::endl;
-    std::cout << system(ss2.str().c_str()) << std::endl;
+        ss2 << "cat " << TEST_ROOT << "/mock/run.log";
+        std::cout << ss2.str() << std::endl;
+        std::cout << system(ss2.str().c_str()) << std::endl;
 
-    std::stringstream ss;
-    ss << "kill -9 " << pid;
-    system(ss.str().c_str());
+        std::stringstream ss;
+        ss << "kill -9 " << pid;
+        system(ss.str().c_str());
+    }
+
 
     return ret;
 }

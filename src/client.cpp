@@ -20,6 +20,8 @@
 #include "httb/client.h"
 #include "helpers.hpp"
 #include "httb/request.h"
+#include "httb/timer.h"
+#include "httb/async_session.h"
 
 
 httb::client_base::client_base() :
@@ -35,8 +37,12 @@ void httb::client_base::setEnableVerbose(bool enable, std::ostream *os) {
     m_verboseOutput = os;
 }
 
-void httb::client_base::setConnectionTimeout(long timeoutSeconds) {
-    m_connectionTimeout = timeoutSeconds;
+void httb::client_base::setConnectionTimeout(size_t timeoutSeconds) {
+    m_connectionTimeout = std::chrono::seconds(timeoutSeconds);
+}
+
+void httb::client_base::setReadTimeout(size_t readSeconds) {
+    m_readTimeout = std::chrono::seconds(readSeconds);
 }
 
 void httb::client_base::setFollowRedirects(bool followRedirects, int maxBounces) {
@@ -47,9 +53,7 @@ void httb::client_base::setFollowRedirects(bool followRedirects, int maxBounces)
 bool httb::client_base::isEnableVerbose() const {
     return m_verbose;
 }
-long httb::client_base::getTimeout() const {
-    return m_connectionTimeout;
-}
+
 int httb::client_base::getMaxRedirectBounces() const {
     return m_maxRedirectBounces;
 }
@@ -134,7 +138,9 @@ httb::client::client() : client_base() {
 httb::client::~client() {
 }
 
-httb::response httb::client::execute(const httb::request &request) {
+
+
+httb::response httb::client::executeBlocking(const httb::request &request) {
     httb::response resp;
     boost::system::error_code ec;
 
@@ -148,6 +154,7 @@ httb::response httb::client::execute(const httb::request &request) {
     // These objects perform our I/O
     tcp::resolver resolver{ioc};
     // Look up the domain name
+
     const auto results = resolver.resolve(request.getHost(), request.getPortString(), ec);
 
     if (ec) {
@@ -199,7 +206,13 @@ httb::response httb::client::execute(const httb::request &request) {
             // Receive the HTTP response
             http::read(stream, buffer, res, ec);
 
-            stream.shutdown(ec);
+            {
+                timer t(m_readTimeout, [&stream] {
+                  stream.lowest_layer().shutdown(boost::asio::socket_base::shutdown_both);
+                });
+                stream.shutdown(ec);
+                t.cancel();
+            }
 
             if (ec == boost::asio::ssl::error::stream_truncated) {
                 // it's just empty ssl response, not expected but not critical case
@@ -208,7 +221,7 @@ httb::response httb::client::execute(const httb::request &request) {
 
             if (ec == boost::asio::error::eof) {
                 // Rationale:
-                // http://stackoverflow.com/questions/25587403/boost-asio-ssl-async-shutdown-always-finishes-with-an-error
+                // https://stackoverflow.com/questions/25587403/boost-asio-ssl-async-shutdown-always-finishes-with-an-error
                 ec.assign(0, ec.category());
             }
         } else {
@@ -218,10 +231,10 @@ httb::response httb::client::execute(const httb::request &request) {
             boost::asio::connect(socket, results.begin(), results.end());
 
             // Send the HTTP request to the remote host
-            http::write(socket, req);
+            http::write(socket, req, ec);
 
             // Receive the HTTP response
-            http::read(socket, buffer, res);
+            http::read(socket, buffer, res, ec);
 
             socket.shutdown(tcp::socket::shutdown_both);
         }
@@ -267,7 +280,7 @@ httb::response httb::client::execute(const httb::request &request) {
             redirectRequest.parseUrl(resp.getHeader("location"));
 
             // overwrite current response with new request
-            resp = execute(redirectRequest);
+            resp = executeBlocking(redirectRequest);
 
             // and repeat while we don't get 2xx code or redirect bounces reaches 5 times
             redirectBounces++;
@@ -277,11 +290,60 @@ httb::response httb::client::execute(const httb::request &request) {
     return resp;
 }
 
-void httb::client::executeAsync(httb::request request, std::function<void(httb::response)> cb) {
-    auto res = std::async(std::launch::async, [this, req = std::move(request), c = std::move(cb)]() {
-      auto res = execute(req);
-      if (c) {
-          c(res);
-      }
-    });
+void httb::client::executeInContext(boost::asio::io_context &ioc, const httb::request &request, const OnResponse &cb) {
+    std::shared_ptr<httb::async_session> session = std::make_shared<httb::async_session>(ioc, (request));
+    session->setVerbose(m_verbose);
+
+    session->run(
+        [this, &cb](boost::system::error_code ec, std::string when) {
+          httb::response resp;
+          auto res = boostErrorToResponseError(std::move(resp), ec);
+          auto body = res.getBody();
+          body += "::" + when;
+          res.setBody(std::move(body));
+          cb(res);
+        },
+        [this, &cb, &ioc, &request] (http::response<http::dynamic_body> res, size_t) {
+          std::string s = boost::beast::buffers_to_string(res.body().data());
+          httb::response resp;
+          resp.status = res.result();
+          resp.statusCode = static_cast<typename std::underlying_type<httb::response::http_status>::type>(res.result());
+          resp.statusMessage = res.reason().to_string();
+          for (auto const &field: res) {
+              resp.addHeader(field.name_string(), field.value());
+          }
+
+          resp.setBody(std::move(s));
+          res.body().consume(res.body().size());
+
+          if (m_followRedirects && (resp.status == httb::response::http_status::moved_permanently ||
+              resp.status == httb::response::http_status::found ||
+              resp.status == httb::response::http_status::temporary_redirect ||
+              resp.status == httb::response::http_status::permanent_redirect)
+              ) {
+                  if (!resp.hasHeader("location")) {
+                      cb(resp);
+                      return;
+                  }
+
+                  // copy request
+                  auto redirectRequest = request;
+
+                  // set to new request Location url
+                  redirectRequest.parseUrl(resp.getHeader("location"));
+
+                  // overwrite current response with new request
+                  executeInContext(ioc, (redirectRequest), cb);
+                  return;
+
+          }
+
+          cb(resp);
+        });
+}
+
+void httb::client::execute(const httb::request &request, const OnResponse &cb) {
+    boost::asio::io_context ioc(2);
+    executeInContext(ioc, request, cb);
+    ioc.run();
 }

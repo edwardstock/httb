@@ -53,6 +53,7 @@ class HttbConan(ConanFile):
         "boost_regex/1.69.0@bincrafters/stable",
         "boost_asio/1.69.0@bincrafters/stable",
         "boost_filesystem/1.69.0@bincrafters/stable",
+        "boost_timer/1.69.0@bincrafters/stable",
         ("gtest/1.8.1@bincrafters/stable", "private"),
 
     )
