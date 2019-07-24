@@ -33,7 +33,8 @@ jobs:
       - run: export CXX=/usr/bin/g++
       - restore_cache:
           keys:
-            - conan-dir-{{ checksum "conanfile.txt" }}
+            - conan-dir-{{ checksum "conanfile.txt" }}-{{ checksum "conanfile.py" }}
+      - run: conan install boost/1.70.0@conan/stable
       - run:
           name: Configuring
           command: cd _build && cmake .. -DCMAKE_BUILD_TYPE=Debug -DHTTB_TEST=ON

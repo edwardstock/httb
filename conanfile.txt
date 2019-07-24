@@ -10,9 +10,7 @@ gtest/1.8.1@bincrafters/stable
 [options]
 OpenSSL:shared=False
 # boost opts
-boost_system:shared=False
-boost_filesystem:shared=False
-boost_regex:shared=False
+boost:shared=False
 
 [generators]
 cmake

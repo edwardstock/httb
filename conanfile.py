@@ -25,9 +25,7 @@ class HttbConan(ConanFile):
     default_options = {
         "shared": False,
         "OpenSSL:shared": False,
-        "boost_system:shared": False,
-        "boost_filesystem:shared": False,
-        "boost_regex:shared": False
+        "boost:shared": False,
     }
     exports = "version"
     exports_sources = (
@@ -79,5 +77,3 @@ class HttbConan(ConanFile):
         cmake.build(target="httb-test")
         self.run("bin/httb-test")
 
-    def package_info(self):
-        self.cpp_info.libs = ["httb"]
