@@ -70,7 +70,7 @@ if (HTTB_TEST)
 		message(FATAL_ERROR ${MK_EXEC_TEST_ERR})
 	endif ()
 
-	add_executable(${PROJECT_NAME_TEST} tests/HttpClientTest.cpp tests/HttpClientNoLocalTest.cpp tests/PrivateTests.cpp)
+	add_executable(${PROJECT_NAME_TEST} tests/HttpClientTest.cpp tests/HttpClientNoLocalTest.cpp)
 	target_compile_options(${PROJECT_NAME_TEST} PUBLIC -Wno-unused-parameter)
 
 	target_link_libraries(${PROJECT_NAME_TEST} ${PROJECT_NAME})
