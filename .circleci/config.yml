@@ -35,7 +35,7 @@ jobs:
             - conan-dir-{{ checksum "conanfile.txt" }}
       - run:
           name: Configuring
-          command: cd _build && cmake .. -DCMAKE_BUILD_TYPE=Debug -DWITH_TEST=ON
+          command: cd _build && cmake .. -DCMAKE_BUILD_TYPE=Debug -DHTTB_TEST=ON
       - save_cache:
           key: conan-dir-{{ checksum "conanfile.txt" }}
           paths:

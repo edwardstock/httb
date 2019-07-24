@@ -59,7 +59,7 @@ class HttbConan(ConanFile):
 
     def build(self):
         cmake = CMake(self)
-        cmake.configure(defs={'WITH_TEST': 'Off', 'CMAKE_BUILD_TYPE': 'Release'})
+        cmake.configure(defs={'HTTB_TEST': 'Off', 'CMAKE_BUILD_TYPE': 'Release'})
         cmake.build()
 
     def package(self):
@@ -75,7 +75,7 @@ class HttbConan(ConanFile):
 
     def test(self):
         cmake = CMake(self)
-        cmake.configure(defs={'WITH_TEST': 'On'})
+        cmake.configure(defs={'HTTB_TEST': 'On'})
         cmake.build(target="httb-test")
         self.run("bin/httb-test")
 
