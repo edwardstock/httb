@@ -84,7 +84,7 @@ void httb::client_base::scanDir(const boost::filesystem::path &path,
 }
 
 void httb::client_base::loadRootCertificates(boost::asio::ssl::context &ctx, boost::system::error_code &ec) {
-    std::vector<std::string> certPaths = {
+    const std::vector<std::string> certPaths = {
         "/etc/ssl/certs/ca-certificates.crt",                // Debian/Ubuntu/Gentoo etc.
         "/etc/pki/tls/certs",                                // Fedora/RHEL
         "/etc/pki/tls/certs/ca-bundle.crt",                  // Fedora/RHEL 6
@@ -103,7 +103,12 @@ void httb::client_base::loadRootCertificates(boost::asio::ssl::context &ctx, boo
     namespace fs = boost::filesystem;
     std::unordered_map<std::string, std::string> certFiles;
     for (const auto &path: certPaths) {
-        scanDir(fs::path(path), certFiles);
+        try {
+            scanDir(fs::path(path), certFiles);
+        } catch (const std::exception &e) {
+
+        }
+
     }
 
     for (auto &iter: certFiles) {
@@ -295,7 +300,7 @@ void httb::client::executeInContext(boost::asio::io_context &ioc, const httb::re
     session->setVerbose(m_verbose);
 
     session->run(
-        [this, &cb](boost::system::error_code ec, std::string when) {
+        [this, cb](boost::system::error_code ec, std::string when) {
           httb::response resp;
           auto res = boostErrorToResponseError(std::move(resp), ec);
           auto body = res.getBody();
@@ -303,7 +308,7 @@ void httb::client::executeInContext(boost::asio::io_context &ioc, const httb::re
           res.setBody(std::move(body));
           cb(res);
         },
-        [this, &cb, &ioc, &request] (http::response<http::dynamic_body> res, size_t) {
+        [this, cb, &ioc, &request] (http::response<http::dynamic_body> res, size_t) {
           std::string s = boost::beast::buffers_to_string(res.body().data());
           httb::response resp;
           resp.status = res.result();
@@ -338,7 +343,7 @@ void httb::client::executeInContext(boost::asio::io_context &ioc, const httb::re
 
           }
 
-          cb(resp);
+          if(cb) cb(resp);
         });
 }
 

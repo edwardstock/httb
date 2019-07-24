@@ -183,16 +183,18 @@ TEST(HttpClientTest, TestGetWithParams) {
     req.addParam(httb::kvd{"int_value", 500});
     httb::client client;
     client.setEnableVerbose(true);
-    httb::response resp = client.executeBlocking(req);
+    client.execute(req, [](httb::response resp){
+      const std::string body = resp.getBody();
+      if (!resp.isSuccess()) {
+          std::cout << "Error response:" << std::endl;
+          std::cout << body << std::endl;
+      }
+      ASSERT_TRUE(resp.isSuccess());
+      ASSERT_STREQ("This is GET method response! Input: a=1;b[0=2;];c=three;double_value=105;int_value=500;",
+                   body.c_str());
+    });
 
-    const std::string body = resp.getBody();
-    if (!resp.isSuccess()) {
-        std::cout << "Error response:" << std::endl;
-        std::cout << body << std::endl;
-    }
-    ASSERT_TRUE(resp.isSuccess());
-    ASSERT_STREQ("This is GET method response! Input: a=1;b[0=2;];c=three;double_value=105;int_value=500;",
-                 body.c_str());
+
 }
 
 TEST(HttpClientTest, TestSimplePost) {

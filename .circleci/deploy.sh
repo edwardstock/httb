@@ -17,13 +17,25 @@ then
     VERS=${1}
 fi
 
-## Test in testing channel
-#conan create . scatter/testing
-#conan export . httb/${VERS}@scatter/testing
-#conan test . httb/${VERS}@scatter/testing
+sysname=$(uname)
 
+stdlibname="libstdc++"
+if [ "${sysname}" == "Darwin" ]
+then
+  stdlibname="libc++"
+fi
 
 ## Deploy in latest channel
-conan create . scatter/latest
-conan export-pkg . httb/${VERS}@scatter/latest -f
+if [ "${sysname}" == "Linux" ]
+then
+  CONAN_LOCAL=1 conan create . scatter/latest -s compiler.libcxx=${stdlibname}11 -s build_type=Debug --build=missing
+#  CONAN_LOCAL=1 conan export-pkg . minter/latest -s compiler.libcxx=${stdlibname}11 -s build_type=Debug -f
+  CONAN_LOCAL=1 conan create .  scatter/latest -s compiler.libcxx=${stdlibname}11 -s build_type=Release --build=missing
+#  CONAN_LOCAL=1 conan export-pkg . minter/latest -s compiler.libcxx=${stdlibname}11 -s build_type=Release -f
+fi
+
+CONAN_LOCAL=1 conan create . scatter/latest -s compiler.libcxx=${stdlibname} -s build_type=Debug --build=missing
+CONAN_LOCAL=1 conan create . scatter/latest -s compiler.libcxx=${stdlibname} -s build_type=Release --build=missing
+
+#conan export-pkg . httb/${VERS}@scatter/latest -f
 conan upload httb/${VERS}@scatter/latest --all -r=scatter

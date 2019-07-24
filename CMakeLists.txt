@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.0)
 project(httb
-        VERSION 0.3.0
+        VERSION 0.3.1
         DESCRIPTION "Simple C++ Boost HTTP client"
         HOMEPAGE_URL "https://github.com/edwardstock/httb"
         LANGUAGES CXX
@@ -57,7 +57,7 @@ target_link_libraries(${PROJECT_NAME} CONAN_PKG::boost)
 target_link_libraries(${PROJECT_NAME} CONAN_PKG::toolboxpp)
 target_link_libraries(${PROJECT_NAME} CONAN_PKG::OpenSSL)
 
-if (WITH_TEST)
+if (HTTB_TEST)
 	add_definitions(-DTEST_ROOT="${CMAKE_CURRENT_SOURCE_DIR}/tests")
 	set(PROJECT_NAME_TEST ${PROJECT_NAME}-test)
 
@@ -70,14 +70,7 @@ if (WITH_TEST)
 		message(FATAL_ERROR ${MK_EXEC_TEST_ERR})
 	endif ()
 
-	if (WIN32)
-		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++0x")
-	elseif (APPLE)
-		add_definitions(-DGTEST_USE_OWN_TR1_TUPLE)
-		add_definitions(-D__GLIBCXX__)
-	endif ()
-
-	add_executable(${PROJECT_NAME_TEST} tests/HttpClientTest.cpp tests/HttpClientNoLocalTest.cpp)
+	add_executable(${PROJECT_NAME_TEST} tests/HttpClientTest.cpp tests/HttpClientNoLocalTest.cpp tests/PrivateTests.cpp)
 	target_compile_options(${PROJECT_NAME_TEST} PUBLIC -Wno-unused-parameter)
 
 	target_link_libraries(${PROJECT_NAME_TEST} ${PROJECT_NAME})
@@ -87,7 +80,7 @@ if (WITH_TEST)
 
 	target_link_libraries(${PROJECT_NAME_TEST} CONAN_PKG::gtest)
 
-	if (WITH_COVERAGE)
+	if (HTTB_COVERAGE)
 		set(COVERAGE_LCOV_EXCLUDES
 		    '${CMAKE_CURRENT_SOURCE_DIR}/libs/*'
 		    '${CMAKE_CURRENT_SOURCE_DIR}/tests/*'
