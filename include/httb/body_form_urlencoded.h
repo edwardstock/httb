@@ -25,17 +25,17 @@ public:
     body_form_urlencoded(const std::string &encodedParamsString);
     body_form_urlencoded(std::string &&encodedParamsString);
 
-    body_form_urlencoded& addParam(const httb::kv &param);
-    body_form_urlencoded& addParam(httb::kv&& param);
-    body_form_urlencoded& addParam(const std::string &name, const std::vector<std::string> &values);
-    body_form_urlencoded& addParams(const httb::kv_vector& append);
-    body_form_urlencoded& addParams(httb::kv_vector &&append);
-    body_form_urlencoded& addParams(const std::unordered_map<std::string, std::string> &map);
-    body_form_urlencoded& addParams(const std::unordered_multimap<std::string, std::string> &map);
-    body_form_urlencoded& addParams(const std::map<std::string, std::string> &map);
-    body_form_urlencoded& addParams(const std::multimap<std::string, std::string> &map);
+    body_form_urlencoded& add_param(const httb::kv &param);
+    body_form_urlencoded& add_param(httb::kv&& param);
+    body_form_urlencoded& add_param(const std::string &name, const std::vector<std::string> &values);
+    body_form_urlencoded& add_params(const httb::kv_vector& append);
+    body_form_urlencoded& add_params(httb::kv_vector &&append);
+    body_form_urlencoded& add_params(const std::unordered_map<std::string, std::string> &map);
+    body_form_urlencoded& add_params(const std::unordered_multimap<std::string, std::string> &map);
+    body_form_urlencoded& add_params(const std::map<std::string, std::string> &map);
+    body_form_urlencoded& add_params(const std::multimap<std::string, std::string> &map);
 
-    const std::string build(httb::io_container *request) const override;
+    std::string build(httb::io_container *request) const override;
 
     virtual ~body_form_urlencoded();
 

@@ -12,11 +12,17 @@
 
 #include <string>
 #include <unordered_map>
+#include "types.h"
 #include "io_container.h"
 #include "response.h"
 #include "request.h"
 #include "client.h"
+#include "body.h"
 
+namespace httb {
+
+
+} // httb
 
 
 #endif //HTTB_HTTB_H

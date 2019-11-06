@@ -16,16 +16,43 @@
 #include "httb/body.h"
 
 namespace httb {
+
+struct file_body_entry {
+  std::string filename;
+  std::string contentType;
+  std::string body;
+};
+
+struct file_path_entry {
+  std::string filename;
+  std::string contentType;
+  std::string path;
+};
+
 class multipart_entry {
 public:
-    std::string name;
-    std::string body;
-    std::string contentType = "text/plain";
-    std::string filename;
-
+    using body_resolver_func = std::function<std::string(void)>;
+    /// \brief Simple key-value entry, like basic POST request with fields data
+    /// \param name param name
+    /// \param body param value
     multipart_entry(const std::string &name, const std::string &body);
-    multipart_entry(const std::string &name, const std::string &contentType, const std::string &filename, const std::string &body);
-    multipart_entry(std::string &&name, std::string &&contentType, std::string &&filename, std::string &&body);
+
+    multipart_entry(const std::string &name, const file_path_entry &pathEntry);
+
+    multipart_entry(const std::string &name, const file_body_entry &bodyEntry);
+
+    std::string getBody() const;
+    std::string getName() const;
+    std::string getContentType() const;
+    std::string getFilename() const;
+    bool hasBody() const;
+
+private:
+    body_resolver_func m_bodyLoader;
+    std::string m_name;
+    std::string m_contentType = "text/plain";
+    std::string m_filename;
+    std::string m_body;
 };
 
 class body_multipart: public httb::request_body {
@@ -38,10 +65,10 @@ public:
 
     body_multipart &addEntry(httb::multipart_entry &&entry);
 
-    const std::string build(httb::io_container *request) const override;
+    std::string build(httb::io_container *request) const override;
 
 private:
-    static const std::string generateRandomString(int length);
+    static std::string genRandomString(int length);
 };
 }
 

@@ -17,6 +17,8 @@
 #include <istream>
 #include <ostream>
 #include <chrono>
+#include <condition_variable>
+#include <mutex>
 #include <boost/filesystem.hpp>
 #include <boost/asio.hpp>
 #include <boost/asio/ip/tcp.hpp>
@@ -47,6 +49,7 @@
 #include "helpers.hpp"
 #include "httb/request.h"
 #include "httb/timer.h"
+#include "httb/types.h"
 
 namespace httb {
 
@@ -59,65 +62,53 @@ using namespace std::chrono_literals;
 
 class async_session : public std::enable_shared_from_this<async_session> {
 public:
-    using errorFunc = std::function<void(boost::system::error_code, std::string)>;
-    using successFunc = std::function<void(http::response<http::dynamic_body>, size_t)>;
+    /// \brief Error callback
+    using error_func_t = std::function<void(boost::system::error_code, std::string)>;
+    /// \brief Success callback
+    using success_func_t = std::function<void(httb::response_t &&, size_t)>;
+    /// \brief Progress callback
+    using progress_func_t = std::function<void(uint64_t, uint64_t, double)>;
 
-    async_session(net::io_context &ctx, const httb::request &request) :
-        m_sslCtx(net::ssl::context::tlsv12),
-        m_resolver(ctx),
-        m_rawStream(nullptr),
-        m_sslStream(nullptr),
-        m_rawRequest(request),
-        m_request(m_rawRequest.createBeastRequest()) {
+    /// \brief single constructor
+    /// \param ctx boost asio io_context
+    /// \param request
+    async_session(net::io_context &ctx, const httb::request &request);
+    virtual ~async_session();
 
-        if (m_rawRequest.isSSL()) {
-            m_sslStream = new beast::ssl_stream<beast::tcp_stream>(ctx, m_sslCtx);
-        } else {
-            m_rawStream = new beast::tcp_stream(ctx);
-        }
-    }
+    /// \brief Start executing http(s) request
+    /// \param onError error callback
+    /// \param onSuccess success callback
+    void run(error_func_t onError, success_func_t onSuccess);
 
-    ~async_session() {
-        delete m_sslStream;
-        delete m_rawStream;
-    }
+    /// \brief Enable verbose output
+    /// \param verbose
+    void setVerbose(bool verbose);
 
-    void run(errorFunc onError, successFunc onSuccess) {
-        m_errorFunc = std::move(onError);
-        m_successFunc = std::move(onSuccess);
+    /// \brief Set progress callback
+    /// \param progress
+    void setOnProgress(progress_func_t progress);
 
-        v("run", "Resolve host " + m_rawRequest.getHost());
+    /// \brief Set connect timeout (not read timeout)
+    /// \param timeout
+    void setConnectionTimeout(std::chrono::seconds timeout);
 
-        m_resolver.async_resolve(m_rawRequest.getHost(), m_rawRequest.getPortString().c_str(),
-                                 std::bind(&async_session::onResolve,
-                                           shared_from_this(),
-                                           std::placeholders::_1,
-                                           std::placeholders::_2));
-
-    }
-
-    void setVerbose(bool verbose) {
-        m_verbose = verbose;
-    }
-
-    void setConnectionTimeout(std::chrono::seconds timeout) {
-        m_connectionTimeout = std::move(timeout);
-    }
-
-    void setReadTimeout(std::chrono::seconds timeout) {
-        m_readTimeout = std::move(timeout);
-    }
+    /// \brief Set response read timeout
+    /// \param timeout
+    void setReadTimeout(std::chrono::seconds timeout);
 private:
+    boost::asio::io_service::strand m_strand;
     boost::asio::ssl::context m_sslCtx;
     tcp::resolver m_resolver;
-    beast::tcp_stream *m_rawStream;
-    beast::ssl_stream<beast::tcp_stream> *m_sslStream;
-    beast::flat_buffer m_buffer; // (Must persist between reads)
-    httb::request m_rawRequest;
-    const http::request<http::string_body> m_request;
-    http::response<http::dynamic_body> m_response;
-    errorFunc m_errorFunc;
-    successFunc m_successFunc;
+    beast::tcp_stream *m_streamRaw;
+    beast::ssl_stream<beast::tcp_stream> *m_streamSSL;
+    beast::multi_buffer m_buffer; // (Must persist between reads)
+    const httb::request m_requestRaw;
+    const http::request<request_body_type> m_request;
+    http::response_parser<httb::response_body_type> m_response;
+    http::response_parser<httb::response_file_body_type> m_file_response;
+    error_func_t m_errorFunc;
+    success_func_t m_successFunc;
+    progress_func_t m_progressFunc;
     bool m_verbose = false;
     std::chrono::seconds m_connectionTimeout = 30s;
     std::chrono::seconds m_readTimeout = 30s;
@@ -126,135 +117,22 @@ private:
         boost::asio::error::eof,
     };
 
-    bool isIgnoreError(boost::system::error_code ec) {
-        return std::find(m_ignoredErrors.begin(), m_ignoredErrors.end(), ec) != m_ignoredErrors.end();
-    }
+    inline bool isIgnoredError(boost::system::error_code ec);
+    inline void fail(boost::system::error_code ec, char const *where);
 
-    void fail(boost::system::error_code ec, char const *where) {
-        if (m_errorFunc) {
-            m_errorFunc(ec, std::string(where));
-        }
-    }
+    void v(const std::string &tag, const std::string &msg);
 
-    void v(const std::string &tag, const std::string &msg) {
-        if (!m_verbose) {
-            return;
-        }
-        std::cout << tag << ": " << msg << std::endl;
-    }
+    void readResponse();
+    void readSSLResponse();
+    void readPlainResponse();
 
-    void onRead(boost::system::error_code ec, std::size_t bytesTransferred) {
-        if (ec && !isIgnoreError(ec)) {
-            fail(ec, "read");
-            return;
-        }
+    void onResolve(boost::system::error_code ec, tcp::resolver::results_type results);
+    void onConnect(boost::system::error_code ec);
+    void onHandshake(boost::system::error_code ec);
+    void onWrite(boost::system::error_code ec, std::size_t);
+    void onRead(boost::system::error_code ec, std::size_t bytesTransferred);
 
-        v("onRead", "Shutting down");
-
-        // Don't shutdown ssl stream - it's bad idea, you will get inifinite waiting for server closing ssl. Close socket directly with no worries
-        getStream()->socket().shutdown(tcp::socket::shutdown_both, ec);
-
-        if (ec && !isIgnoreError(ec) && ec != boost::system::errc::not_connected) {
-            fail(ec, "shutdown");
-            return;
-        }
-
-        if (m_successFunc) {
-            m_successFunc(m_response, bytesTransferred);
-        }
-
-        // here everything gracefully closed
-    }
-
-    void onWrite(boost::system::error_code ec, std::size_t) {
-        if (ec && !isIgnoreError(ec)) {
-            fail(ec, "write");
-            return;
-        }
-
-        v("onWritten", "Read response...");
-        getStream()->expires_after(m_readTimeout);
-        if (m_rawRequest.isSSL()) {
-            http::async_read(*m_sslStream, m_buffer, m_response,
-                             std::bind(&async_session::onRead,
-                                       shared_from_this(),
-                                       std::placeholders::_1,
-                                       std::placeholders::_2));
-        } else {
-            http::async_read(*m_rawStream, m_buffer, m_response,
-                             std::bind(&async_session::onRead,
-                                       shared_from_this(),
-                                       std::placeholders::_1,
-                                       std::placeholders::_2));
-        }
-    }
-
-    void onConnect(boost::system::error_code ec) {
-        if (ec && !isIgnoreError(ec)) {
-            fail(ec, "connect");
-            return;
-        }
-
-        getStream()->expires_after(m_connectionTimeout);
-
-        if(m_verbose) {
-            std::stringstream verboseStream;
-            verboseStream << m_request;
-            std::string verboseString = verboseStream.str();
-
-            if (verboseStream.str().size() >= 1024) {
-                verboseString = verboseString.substr(0, 1023);
-                verboseString += " ...(too big for output)";
-            }
-            std::cout << verboseStream.str();
-        }
-
-        if (m_rawRequest.isSSL()) {
-            v("onConnected", "Handshaking...");
-            m_sslStream->async_handshake(ssl::stream_base::client,
-                                         std::bind(&async_session::onHandshake,
-                                                   shared_from_this(),
-                                                   std::placeholders::_1)
-            );
-            return;
-        }
-        http::async_write(*getStream(), m_request,
-                          std::bind(&async_session::onWrite,
-                                    shared_from_this(),
-                                    std::placeholders::_1,
-                                    std::placeholders::_2));
-    }
-
-    void onHandshake(boost::system::error_code ec) {
-        if (ec && !isIgnoreError(ec)) {
-            fail(ec, "handshake");
-            return;
-        }
-
-        http::async_write(*m_sslStream, m_request,
-                          std::bind(&async_session::onWrite,
-                                    shared_from_this(),
-                                    std::placeholders::_1,
-                                    std::placeholders::_2));
-    }
-
-    void onResolve(boost::system::error_code ec, tcp::resolver::results_type results) {
-        if (ec && !isIgnoreError(ec)) {
-            fail(ec, "resolve");
-            return;
-        }
-
-        getStream()->expires_after(std::chrono::seconds(10));
-
-        v("onResolved", "Connecting to host...");
-        getStream()->async_connect(results.begin(), results.end(),
-                                   std::bind(&async_session::onConnect, shared_from_this(), std::placeholders::_1));
-
-    }
-
-    beast::tcp_stream *getStream() {
-        return m_rawRequest.isSSL() ? &m_sslStream->next_layer() : m_rawStream;
-    }
+    beast::tcp_stream *getStream();
 };
 
 } // httb

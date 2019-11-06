@@ -17,7 +17,7 @@ namespace httb {
 
 class request_body {
 public:
-    virtual const std::string build(httb::io_container *request) const = 0;
+    virtual std::string build(httb::io_container *request) const = 0;
     virtual ~request_body() {}
 
 

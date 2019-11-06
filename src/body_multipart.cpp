@@ -7,42 +7,58 @@
  * \link   https://github.com/edwardstock
  */
 
-#include "httb/body_multipart.h"
 #include <random>
+#include <iostream>
+#include <toolboxpp.hpp>
+#include "httb/body_multipart.h"
 
 httb::multipart_entry::multipart_entry(const std::string &name, const std::string &body) :
-    name(name),
-    body(body) {
+    m_name(name),
+    m_body(body) {
 }
 
-httb::multipart_entry::multipart_entry(
-    const std::string &name,
-    const std::string &contentType,
-    const std::string &filename,
-    const std::string &body) :
-    name(name),
-    body(body),
-    contentType(contentType),
-    filename(filename) {
+httb::multipart_entry::multipart_entry(const std::string &name, const httb::file_path_entry &pathEntry) :
+    m_name(name),
+    m_contentType(pathEntry.contentType),
+    m_filename(pathEntry.filename) {
+    m_bodyLoader = [pathEntry] {
+      return toolboxpp::fs::readFile(pathEntry.path);
+    };
+}
+httb::multipart_entry::multipart_entry(const std::string &name, const httb::file_body_entry &bodyEntry):
+    m_name(name),
+    m_contentType(bodyEntry.contentType),
+    m_filename(bodyEntry.filename),
+    m_body(bodyEntry.body) {
 
 }
 
-httb::multipart_entry::multipart_entry(
-    std::string &&name,
-    std::string &&contentType,
-    std::string &&filename,
-    std::string &&body) :
-    name(std::move(name)),
-    body(std::move(body)),
-    contentType(std::move(contentType)),
-    filename(std::move(filename)) {
+std::string httb::multipart_entry::getBody() const {
+    if (m_body.empty()) {
+        return m_bodyLoader();
+    }
 
+    return m_body;
+}
+
+std::string httb::multipart_entry::getName() const {
+    return m_name;
+}
+std::string httb::multipart_entry::getContentType() const {
+    return m_contentType;
+}
+std::string httb::multipart_entry::getFilename() const {
+    return m_filename;
+}
+
+bool httb::multipart_entry::hasBody() const {
+    return !m_body.empty() || (m_bodyLoader && !m_filename.empty());
 }
 
 httb::body_multipart::body_multipart() {
-    const std::string randomVal = generateRandomString(8);
-    std::string boundaryName = "----HttbBoundary" + randomVal;
-    this->boundaryName = std::move(boundaryName);
+    const std::string randomVal = genRandomString(8);
+    std::string bname = "----HttbBoundary" + randomVal;
+    this->boundaryName = std::move(bname);
 }
 
 httb::body_multipart::~body_multipart() {
@@ -54,34 +70,32 @@ httb::body_multipart &httb::body_multipart::addEntry(httb::multipart_entry &&ent
     return *this;
 }
 
-#include <iostream>
-
-const std::string httb::body_multipart::build(httb::io_container *request) const {
+std::string httb::body_multipart::build(httb::io_container *request) const {
     std::stringstream ss;
     size_t i = 0;
-    for (const auto &entry: m_entries) {
-        if (entry.body.empty()) {
+    for (auto &&entry: m_entries) {
+        if (!entry.hasBody()) {
             // warn
             continue;
         }
 
         ss << "--" << boundaryName << "\r\n";
-        ss << "Content-Disposition: format-data; name=\"" << entry.name << "\"";
-        if (!entry.filename.empty()) {
-            ss << "; filename=\"" << entry.filename << "\"";
+        ss << "Content-Disposition: format-data; name=\"" << entry.getName() << "\"";
+        if (!entry.getFilename().empty()) {
+            ss << "; filename=\"" << entry.getFilename() << "\"";
             ss << "\r\n";
         } else {
             ss << "\r\n";
         }
 
-        if (!entry.contentType.empty()) {
-            ss << "Content-Type: " << entry.contentType << "\r\n";
+        if (!entry.getContentType().empty()) {
+            ss << "Content-Type: " << entry.getContentType() << "\r\n";
         }
 
         ss << "\r\n";
-        ss << entry.body;
+        ss << entry.getBody();
 
-        if(i < m_entries.size()-1) {
+        if (i < m_entries.size() - 1) {
             ss << "\r\n";
         }
         i++;
@@ -90,17 +104,10 @@ const std::string httb::body_multipart::build(httb::io_container *request) const
     request->setHeader({"Content-Type", "multipart/form-data; boundary=" + boundaryName});
     const std::string res = ss.str();
 
-//    if(res.size() >= 1024) {
-//        std::cout << res.substr(0, 1023) << "... (too big to print)" << std::endl;
-//    } else {
-//        std::cout << res << std::endl;
-//    }
-
-
     return res;
 }
 
-const std::string httb::body_multipart::generateRandomString(int length) {
+std::string httb::body_multipart::genRandomString(int length) {
     std::string chars(
         "abcdefghijklmnopqrstuvwxyz"
         "ABCDEFGHIJKLMNOPQRSTUVWXYZ"

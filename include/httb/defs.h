@@ -31,14 +31,14 @@ inline bool case_insensitive_equal(const std::string &str1, const std::string &s
           return tolower(a) == tolower(b);
         });
 }
-class CaseInsensitiveEqual {
+class icase_equal_t {
 public:
     bool operator()(const std::string &str1, const std::string &str2) const noexcept {
         return case_insensitive_equal(str1, str2);
     }
 };
 // Based on https://stackoverflow.com/questions/2590677/how-do-i-combine-hash-values-in-c0x/2595226#2595226
-class CaseInsensitiveHash {
+class icase_hash_t {
 public:
     std::size_t operator()(const std::string &str) const noexcept {
         std::size_t h = 0;
@@ -49,15 +49,15 @@ public:
     }
 };
 
-using CaseInsensitiveMultimap = std::unordered_multimap<std::string,
-                                                        std::string,
-                                                        CaseInsensitiveHash,
-                                                        CaseInsensitiveEqual>;
+using icase_multimap_t = std::unordered_multimap<std::string,
+                                                 std::string,
+                                                 icase_hash_t,
+                                                 icase_equal_t>;
 
-using CaseInsensitiveMap = std::unordered_map<std::string,
-                                              std::string,
-                                              CaseInsensitiveHash,
-                                              CaseInsensitiveEqual>;
+using icase_map_t = std::unordered_map<std::string,
+                                       std::string,
+                                       icase_hash_t,
+                                       icase_equal_t>;
 
 }
 

@@ -9,8 +9,10 @@
 
 #include <string>
 #include <sstream>
+#include <thread>
 #include <boost/regex.hpp>
 #include <toolboxpp.hpp>
+#include <httb/types.h>
 #include "httb/request.h"
 #include "httb/helpers.hpp"
 
@@ -109,7 +111,7 @@ void httb::base_request::parseUrl(const std::string &url) {
     }
 }
 
-void httb::base_request::parseParamsString(const std::string &queryString) {
+void httb::base_request::parseQuery(const std::string &queryString) {
     std::string query = queryString;
     if (query[0] == '?') {
         query = query.substr(1, query.length());
@@ -118,27 +120,27 @@ void httb::base_request::parseParamsString(const std::string &queryString) {
     std::vector<std::string> pairs = toolboxpp::strings::split(query, "&");
 
     for (const auto &param: pairs) {
-        addParam(toolboxpp::strings::splitPair(param, "="));
+        addQuery(toolboxpp::strings::splitPair(param, "="));
     }
 }
 
-httb::base_request::method httb::base_request::methodFromString(const std::string &methodName) {
+httb::base_request::method httb::base_request::MethodFromString(const std::string &method_name) {
     using toolboxpp::strings::equalsIgnoreCase;
 
-    if (equalsIgnoreCase(methodName, "POST")) {
+    if (equalsIgnoreCase(method_name, "POST")) {
         return httb::base_request::method::post;
-    } else if (equalsIgnoreCase(methodName, "PUT")) {
+    } else if (equalsIgnoreCase(method_name, "PUT")) {
         return method::put;
-    } else if (equalsIgnoreCase(methodName, "DELETE")) {
+    } else if (equalsIgnoreCase(method_name, "DELETE")) {
         return method::delete_;
-    } else if (equalsIgnoreCase(methodName, "HEAD")) {
+    } else if (equalsIgnoreCase(method_name, "HEAD")) {
         return method::head;
     }
 
     return method::get;
 }
 
-std::string httb::base_request::methodToString(httb::base_request::method methodName) {
+std::string httb::base_request::MethodToString(httb::base_request::method methodName) {
     std::string out;
 
     switch (methodName) {
@@ -163,16 +165,16 @@ void httb::base_request::setMethod(httb::base_request::method method) {
     this->m_method = method;
 }
 
-void httb::base_request::addParam(httb::kv &&keyValue) {
+void httb::base_request::addQuery(httb::kv &&keyValue) {
     m_params.push_back(std::move(keyValue));
 }
 
-void httb::base_request::addParam(kvd &&keyValue) {
+void httb::base_request::addQuery(kvd &&keyValue) {
     auto tmp = std::move(keyValue);
     std::stringstream ss;
     ss << tmp.second;
 
-    addParam({tmp.first, ss.str()});
+    addQuery({tmp.first, ss.str()});
 }
 
 void httb::base_request::useSSL(bool useSSL) {
@@ -194,8 +196,8 @@ std::string httb::base_request::getUrl() const {
         ss << "/";
     }
 
-    if (hasParams()) {
-        ss << getParamsString();
+    if (hasQuery()) {
+        ss << getQueryString();
     }
 
     return ss.str();
@@ -205,11 +207,11 @@ httb::base_request::method httb::base_request::getMethod() const {
     return m_method;
 }
 
-bool httb::base_request::hasParams() const {
+bool httb::base_request::hasQuery() const {
     return !m_params.empty();
 }
 
-bool httb::base_request::hasParam(const std::string &key, bool icase) const {
+bool httb::base_request::hasQuery(const std::string &key, bool icase) const {
     using toolboxpp::strings::equalsIgnoreCase;
     const auto &cmp = [icase](const std::string &lhs, const std::string &rhs) {
       if (icase) {
@@ -228,7 +230,7 @@ bool httb::base_request::hasParam(const std::string &key, bool icase) const {
     return false;
 }
 
-std::string httb::base_request::getParam(const std::string &key, bool icase) const {
+std::string httb::base_request::getQuery(const std::string &key, bool icase) const {
     using toolboxpp::strings::equalsIgnoreCase;
     const auto &cmp = [icase](const std::string &lhs, const std::string &rhs) {
       if (icase) {
@@ -246,7 +248,47 @@ std::string httb::base_request::getParam(const std::string &key, bool icase) con
     return std::string();
 }
 
-bool httb::base_request::removeParamArrayItem(const std::string &key, size_t index, bool icase) {
+boost::optional<httb::kv> httb::base_request::getQueryEntry(const std::string &key, bool icase) const {
+    boost::optional<httb::kv> out;
+    using toolboxpp::strings::equalsIgnoreCase;
+    const auto &cmp = [icase](const std::string &lhs, const std::string &rhs) {
+      if (icase) {
+          return equalsIgnoreCase(lhs, rhs);
+      } else {
+          return lhs == rhs;
+      }
+    };
+    for (const auto &param: m_params) {
+        if (cmp(param.first, key)) {
+            out = param;
+            break;
+        }
+    }
+
+   return out;
+}
+
+void httb::base_request::setQuery(const std::string &key, const std::string &value, bool icase) {
+    using toolboxpp::strings::equalsIgnoreCase;
+    const auto &cmp = [icase](const std::string &lhs, const std::string &rhs) {
+      if (icase) {
+          return equalsIgnoreCase(lhs, rhs);
+      } else {
+          return lhs == rhs;
+      }
+    };
+    for (auto &param: m_params) {
+        if (cmp(param.first, key)) {
+            param.second = value;
+        }
+    }
+}
+
+void httb::base_request::setQuery(const httb::kv &kv, bool icase) {
+    setQuery(kv.first, kv.second, icase);
+}
+
+bool httb::base_request::removeQueryArray(const std::string &key, size_t index, bool icase) {
     using toolboxpp::strings::equalsIgnoreCase;
     const auto &cmp = [icase](const std::string &lhs, const std::string &rhs) {
       if (icase) {
@@ -277,7 +319,7 @@ bool httb::base_request::removeParamArrayItem(const std::string &key, size_t ind
     return erasedItems > 0;
 }
 
-bool httb::base_request::removeParam(const std::string &key, bool icase) {
+bool httb::base_request::removeQuery(const std::string &key, bool icase) {
     using toolboxpp::strings::equalsIgnoreCase;
     const auto &cmp = [icase](const std::string &lhs, const std::string &rhs) {
       if (icase) {
@@ -302,7 +344,7 @@ bool httb::base_request::removeParam(const std::string &key, bool icase) {
     return foundCount > 0;
 }
 
-std::vector<std::string> httb::base_request::getParamArray(const std::string &key, bool icase) const {
+std::vector<std::string> httb::base_request::getQueryArray(const std::string &key, bool icase) const {
     std::vector<std::string> out;
 
     using toolboxpp::strings::equalsIgnoreCase;
@@ -323,7 +365,7 @@ std::vector<std::string> httb::base_request::getParamArray(const std::string &ke
     return out;
 }
 
-std::string httb::base_request::getParamsString() const {
+std::string httb::base_request::getQueryString() const {
     std::string combined;
     if (!m_params.empty()) {
         std::stringstream ss;
@@ -341,7 +383,7 @@ std::string httb::base_request::getParamsString() const {
     return combined;
 }
 
-const httb::kv_vector &httb::base_request::getParams() const {
+const httb::kv_vector &httb::base_request::getQueryList() const {
     return m_params;
 }
 
@@ -368,11 +410,11 @@ std::string httb::base_request::getPortString() const {
     return m_port;
 }
 
-std::string httb::base_request::getProto() const {
+std::string httb::base_request::getProtocolName() const {
     return m_proto;
 }
 
-void httb::base_request::setProto(const std::string &protocolName) {
+void httb::base_request::setProtocolName(const std::string &protocolName) {
     m_proto = protocolName;
 }
 
@@ -383,8 +425,8 @@ std::string httb::base_request::getPath() const {
     return m_path;
 }
 
-std::string httb::base_request::getPathWithParams() const {
-    return getPath() + getParamsString();
+std::string httb::base_request::getPathWithQuery() const {
+    return getPath() + getQueryString();
 }
 
 void httb::base_request::setPath(const std::string &path) {
@@ -432,7 +474,7 @@ bool httb::base_request::isSSL() const {
 boost::beast::http::request<boost::beast::http::string_body> httb::request::createBeastRequest() const {
     namespace http = boost::beast::http;
 
-    http::request<http::string_body> req{getMethod(), getPathWithParams(), 11};
+    http::request<http::string_body> req{getMethod(), getPathWithQuery(), 11};
     req.set(http::field::host, getHost());
 
     std::stringstream versionBuilder;

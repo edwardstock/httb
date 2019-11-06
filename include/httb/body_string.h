@@ -22,7 +22,7 @@ public:
     body_string(std::string &&body);
     virtual ~body_string();
 
-    const std::string build(httb::io_container *request) const override;
+    std::string build(httb::io_container *request) const override;
 
 private:
     std::string m_body;

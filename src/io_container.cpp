@@ -38,7 +38,7 @@ void httb::io_container::setHeader(httb::kv &&keyValue) {
         return addHeader(std::move(keyValue));
     }
 }
-bool httb::io_container::hasHeader(const std::string &name) const {
+bool httb::io_container::containsHeader(const std::string &name) const {
     using toolboxpp::strings::equalsIgnoreCase;
     for (auto &h: headers) {
         if (equalsIgnoreCase(h.first, name)) {
@@ -48,10 +48,10 @@ bool httb::io_container::hasHeader(const std::string &name) const {
 
     return false;
 }
-std::pair<std::string, std::string> httb::io_container::getHeaderPair(const std::string &headerName) const {
+std::pair<std::string, std::string> httb::io_container::searchHeaderPair(const std::string &name) const {
     using toolboxpp::strings::equalsIgnoreCase;
     for (auto &h: headers) {
-        if (equalsIgnoreCase(h.first, headerName)) {
+        if (equalsIgnoreCase(h.first, name)) {
             return {h.first, h.second};
         }
     }
@@ -68,9 +68,9 @@ std::string httb::io_container::getHeader(const std::string &headerName) const {
 
     return std::string();
 }
-bool httb::io_container::compareHeaderValue(const std::string &headerName, const std::string &comparable) const {
-    if (!hasHeader(headerName)) return false;
-    return getHeader(headerName) == comparable;
+bool httb::io_container::compareHeaderValue(const std::string &header_name, const std::string &comparable) const {
+    if (!containsHeader(header_name)) return false;
+    return getHeader(header_name) == comparable;
 }
 void httb::io_container::addHeader(const std::string &key, const std::string &value) {
     headers.emplace_back(key, value);
@@ -87,12 +87,12 @@ void httb::io_container::addHeader(httb::kv &&keyValue) {
 void httb::io_container::addHeaders(const httb::kv_vector &values) {
     headers.insert(headers.end(), values.begin(), values.end());
 }
-void httb::io_container::setHeaders(const httb::CaseInsensitiveMap &map) {
+void httb::io_container::setHeaders(const httb::icase_map_t &map) {
     for (auto &h: map) {
         addHeader(h.first, h.second);
     }
 }
-void httb::io_container::setHeaders(const httb::CaseInsensitiveMultimap &mmp) {
+void httb::io_container::setHeaders(const httb::icase_multimap_t &mmp) {
     for (auto &h: mmp) {
         addHeader(h.first, h.second);
     }

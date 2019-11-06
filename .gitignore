@@ -5,6 +5,10 @@ tests/mock/test_*
 tests/mock/*.pid
 tests/mock/*.log
 conan/*
+.vscode
 !conan/conan.cmake
 *.o
 conanfile.txt.junk
+
+.idea/
+!.idea/codeStyles

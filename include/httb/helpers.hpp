@@ -21,7 +21,7 @@ namespace utils {
 /// \param n Value
 /// \return string representation
 template<typename T>
-const std::string toString(T n) {
+std::string toString(T n) {
     static_assert(std::is_integral<T>::value || std::is_floating_point<T>::value,
                   "Value can be only integral type or floating point");
 

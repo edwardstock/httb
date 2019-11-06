@@ -11,7 +11,8 @@ Lightweight C++ HTTP Client based on Boost.Beast
  * Request builder
  * Follow redirects
  * Multipart body
- * File uploading
+ * File downloading/uploading
+ * Progress listener
  * Parser for `x-www-form-urlencoded` `POST`/`PUT` body
  
  
@@ -21,13 +22,12 @@ Lightweight C++ HTTP Client based on Boost.Beast
 ```cpp
 #include <iostream>
 #include <httb/httb.h>
-#include <boost/asio/io_context.hpp>
 
 int main() {
 
     httb::request request("http://localhost:9000/simple-server.php/get");
     httb::client client;
-    client.setEnableVerbose(true, std::cout);
+    client.setVerbose(true, std::cout);
 
     // this is a blocking async method, wait for response
     client.execute(request, [](httb::response resp) {
@@ -37,7 +37,8 @@ int main() {
 
 
     // this is 2 simultaneous requests
-    boost::asio::io_context ioctx(2);
+    // httb::context is an alias for boost::asio::io_context
+    httb::context ioctx(2);
 
     client.executeInContext(ioctx, request, []{httb::response resp} {
         //...
@@ -70,7 +71,7 @@ int main() {
     req.setHeader({"content-type", "application/x-www-form-urlencoded"});
     
     httb::client client;
-    client.setEnableVerbose(true);
+    client.setVerbose(true);
     client.execute(req, [](httb::response resp) {
         if(!resp.isSuccess()) {
                 std::cout << "Error response:" << std::endl;
@@ -94,13 +95,21 @@ int main() {
     req.setHeader({"content-type", "application/x-www-form-urlencoded"});
     
     httb::body_multipart body;
-    body.addEntry({"myfile", "text/plain", "myfile.txt", loadMyFileToString()});
+
+    // you can load in memory file body by yourself
+    httb::file_body_entry fileBodyEntry = {"myfile.txt", "text/plain", loadMyFileToString()};
+    body.addEntry({"myfile", fileBodyEntry});
+
+    // or use lazy function
+    httb::file_path_entry filePathEntry = {"myfile.txt", "text/plain", "/path/to/file.txt"}
+    body.addEntry({"myfile", filePathEntry});
+
     body.addEntry({"my_post_key", "post_value"});
     
     req.setBody(body);
     
     httb::client client;
-    client.setEnableVerbose(true);
+    client.setVerbose(true);
     client.executeBlocking(req, [](httb::response resp){
         if(!resp.isSuccess()) {
             std::cout << "Error response:" << std::endl;
@@ -118,32 +127,32 @@ const std::string src = "https://www.google.com/search?q=boost+beast&oq=boost+be
 httb::request req(src);
 
 req.isSSL()              // true
-req.getProto()           // "https"
+req.getProtocolName()    // "https"
 req.getPort()            // (uint16_t) 443
 req.getPortString()      // "443"
 req.getHost()            // "www.google.com");
 req.getPath()            // "/search"
-req.getParamsString()    // "?q=boost+beast&oq=boost+beast&aqs=chrome.0.69i59l3j69i60l3.2684j1j9&sourceid=chrome&ie=UTF-8");
-req.getParam("q")        // "boost+beast"
-req.getParam("oq")       // "boost+beast");
-req.getParam("aqs")      // "chrome.0.69i59l3j69i60l3.2684j1j9"
-req.getParam("sourceid") // "chrome"
-req.getParam("ie")       // "UTF-8"
+req.getQueryString()     // "?q=boost+beast&oq=boost+beast&aqs=chrome.0.69i59l3j69i60l3.2684j1j9&sourceid=chrome&ie=UTF-8");
+req.getQuery("q")        // "boost+beast"
+req.getQuery("oq")       // "boost+beast"
+req.getQuery("aqs")      // "chrome.0.69i59l3j69i60l3.2684j1j9"
+req.getQuery("sourceid") // "chrome"
+req.getQuery("ie")       // "UTF-8"
 
-req.addParam({"param", "value"});
-req.addParam({"array[]", "val1"});
-req.addParam({"array[]", "val2"});
+req.addQuery({"param", "value"});
+req.addQuery({"array[]", "val1"});
+req.addQuery({"array[]", "val2"});
 
 // get array params
-std::vector<std::string> arParams = req.getParamArray("array[]", true);
+std::vector<std::string> arParams = req.getQueryArray("array[]", true);
 
-req.addParams({
+req.addQuery({
     {"aaa", "vvv"},
     {"bbb", "vvv"}
 });
 
 // overwrite param
-req.setParam({"param", "value1"})
+req.setQuery({"param", "value1"})
 
 req.addHeader({"header-name", "header-value"});
 req.addHeaders(...as params...)

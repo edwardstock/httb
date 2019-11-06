@@ -34,22 +34,22 @@ public:
     /// \brief Adds from map new headers values, if some key exists, value will overwrited
     /// \see addHeader(const KeyValue&)
     /// \param map unorderd_map
-    void setHeaders(const httb::CaseInsensitiveMap &map);
+    void setHeaders(const httb::icase_map_t &map);
 
     /// \brief Adds from map new headers values, if some key exists, value will overwrited
     /// \see addHeader(const KeyValue&)
     /// \param mmp
-    void setHeaders(const httb::CaseInsensitiveMultimap &mmp);
+    void setHeaders(const httb::icase_multimap_t &mmp);
 
     /// \brief Check for header keys exists
     /// \param name header name. Searching is case insensitive
     /// \return true is key exists
-    bool hasHeader(const std::string &name) const;
+    bool containsHeader(const std::string &name) const;
 
     /// \brief Search for header and return row as pair: wss::web::KeyValue
-    /// \param headerName string. Searching is case insensitive
+    /// \param name string. Searching is case insensitive
     /// \return pair wss::web::KeyValue
-    std::pair<std::string, std::string> getHeaderPair(const std::string &headerName) const;
+    std::pair<std::string, std::string> searchHeaderPair(const std::string &name) const;
 
     /// \brief Search for header and return it value
     /// \param headerName string. Searching is case insensitive
@@ -57,10 +57,10 @@ public:
     std::string getHeader(const std::string &headerName) const;
 
     /// \brief Search for header and compare it value with comparable string
-    /// \param headerName string. Searching is case insensitive
+    /// \param header_name string. Searching is case insensitive
     /// \param comparable string to compare with
     /// \return true if header found and equals to comparable, false otherwise
-    bool compareHeaderValue(const std::string &headerName, const std::string &comparable) const;
+    bool compareHeaderValue(const std::string &header_name, const std::string &comparable) const;
 
     /// \brief Add header with separate key and value strings. If header exists, value will be ovewrited.
     /// \param key string. Value will be writed in original case

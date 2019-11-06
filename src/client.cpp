@@ -23,22 +23,21 @@
 #include "httb/timer.h"
 #include "httb/async_session.h"
 
-
 httb::client_base::client_base() :
     m_verboseOutput(&std::cout),
     m_ctx(boost::asio::ssl::context::sslv23_client) {
-    loadRootCertificates(m_ctx);
+    loadRootCerts(m_ctx);
 }
 httb::client_base::~client_base() {
 
 }
-void httb::client_base::setEnableVerbose(bool enable, std::ostream *os) {
+void httb::client_base::setVerbose(bool enable, std::ostream *os) {
     m_verbose = enable;
     m_verboseOutput = os;
 }
 
-void httb::client_base::setConnectionTimeout(size_t timeoutSeconds) {
-    m_connectionTimeout = std::chrono::seconds(timeoutSeconds);
+void httb::client_base::setConnectionTimeout(size_t connectionSeconds) {
+    m_connectionTimeout = std::chrono::seconds(connectionSeconds);
 }
 
 void httb::client_base::setReadTimeout(size_t readSeconds) {
@@ -50,14 +49,14 @@ void httb::client_base::setFollowRedirects(bool followRedirects, int maxBounces)
     m_maxRedirectBounces = maxBounces;
 }
 
-bool httb::client_base::isEnableVerbose() const {
+bool httb::client_base::getVerbose() const {
     return m_verbose;
 }
 
 int httb::client_base::getMaxRedirectBounces() const {
     return m_maxRedirectBounces;
 }
-bool httb::client_base::isFollowRedirects() const {
+bool httb::client_base::getFollowRedirects() const {
     return m_followRedirects;
 }
 
@@ -83,7 +82,7 @@ void httb::client_base::scanDir(const boost::filesystem::path &path,
     }
 }
 
-void httb::client_base::loadRootCertificates(boost::asio::ssl::context &ctx, boost::system::error_code &ec) {
+void httb::client_base::loadRootCerts(boost::asio::ssl::context &ctx, boost::system::error_code &ec) {
     const std::vector<std::string> certPaths = {
         "/etc/ssl/certs/ca-certificates.crt",                // Debian/Ubuntu/Gentoo etc.
         "/etc/pki/tls/certs",                                // Fedora/RHEL
@@ -117,9 +116,9 @@ void httb::client_base::loadRootCertificates(boost::asio::ssl::context &ctx, boo
     }
 }
 
-void httb::client_base::loadRootCertificates(boost::asio::ssl::context &ctx) {
+void httb::client_base::loadRootCerts(boost::asio::ssl::context &ctx) {
     boost::system::error_code ec;
-    httb::client_base::loadRootCertificates(ctx, ec);
+    httb::client_base::loadRootCerts(ctx, ec);
     if (ec)
         throw boost::system::system_error{ec};
 }
@@ -134,7 +133,8 @@ httb::response httb::client_base::boostErrorToResponseError(httb::response &&in,
     return out;
 }
 
-httb::response httb::client_base::boostErrorToResponseError(httb::response &&in, const boost::system::system_error &e) {
+httb::response httb::client_base::boostErrorToResponseError(httb::response &&in,
+                                                            const boost::system::system_error &e) {
     return boostErrorToResponseError(std::move(in), e.code());
 }
 
@@ -142,8 +142,6 @@ httb::client::client() : client_base() {
 }
 httb::client::~client() {
 }
-
-
 
 httb::response httb::client::executeBlocking(const httb::request &request) {
     httb::response resp;
@@ -274,7 +272,7 @@ httb::response httb::client::executeBlocking(const httb::request &request) {
                 resp.status == httb::response::http_status::permanent_redirect
         )) {
 
-            if (!resp.hasHeader("location")) {
+            if (!resp.containsHeader("location")) {
                 return resp;
             }
 
@@ -295,10 +293,14 @@ httb::response httb::client::executeBlocking(const httb::request &request) {
     return resp;
 }
 
-void httb::client::executeInContext(boost::asio::io_context &ioc, const httb::request &request, const OnResponse &cb) {
+void httb::client::executeInContext(boost::asio::io_context &ioc,
+                                    const httb::request &request,
+                                    const response_func_t &cb,
+                                    const progress_func_t &onProgress) {
     std::shared_ptr<httb::async_session> session = std::make_shared<httb::async_session>(ioc, (request));
     session->setVerbose(m_verbose);
 
+    session->setOnProgress(onProgress);
     session->run(
         [this, cb](boost::system::error_code ec, std::string when) {
           httb::response resp;
@@ -308,9 +310,11 @@ void httb::client::executeInContext(boost::asio::io_context &ioc, const httb::re
           res.setBody(std::move(body));
           cb(res);
         },
-        [this, cb, &ioc, &request] (http::response<http::dynamic_body> res, size_t) {
+        [this, cb, onProgress, &ioc, &request](httb::response_t &&result, size_t) {
+          auto res = std::move(result);
           std::string s = boost::beast::buffers_to_string(res.body().data());
           httb::response resp;
+          resp.setBody(std::move(s));
           resp.status = res.result();
           resp.statusCode = static_cast<typename std::underlying_type<httb::response::http_status>::type>(res.result());
           resp.statusMessage = res.reason().to_string();
@@ -318,7 +322,6 @@ void httb::client::executeInContext(boost::asio::io_context &ioc, const httb::re
               resp.addHeader(field.name_string(), field.value());
           }
 
-          resp.setBody(std::move(s));
           res.body().consume(res.body().size());
 
           if (m_followRedirects && (resp.status == httb::response::http_status::moved_permanently ||
@@ -326,29 +329,80 @@ void httb::client::executeInContext(boost::asio::io_context &ioc, const httb::re
               resp.status == httb::response::http_status::temporary_redirect ||
               resp.status == httb::response::http_status::permanent_redirect)
               ) {
-                  if (!resp.hasHeader("location")) {
-                      cb(resp);
-                      return;
-                  }
-
-                  // copy request
-                  auto redirectRequest = request;
-
-                  // set to new request Location url
-                  redirectRequest.parseUrl(resp.getHeader("location"));
-
-                  // overwrite current response with new request
-                  executeInContext(ioc, (redirectRequest), cb);
+              if (!resp.containsHeader("location")) {
+                  cb(resp);
                   return;
+              }
+
+              // copy request
+              auto redirectRequest = request;
+
+              // set to new request Location url
+              redirectRequest.parseUrl(resp.getHeader("location"));
+
+              // overwrite current response with new request
+              executeInContext(ioc, (redirectRequest), cb, onProgress);
+              return;
 
           }
 
-          if(cb) cb(resp);
+          if (cb) cb(resp);
         });
 }
 
-void httb::client::execute(const httb::request &request, const OnResponse &cb) {
+void httb::client::execute(const httb::request &request,
+                           const response_func_t &cb,
+                           const progress_func_t &onProgress) {
     boost::asio::io_context ioc(2);
-    executeInContext(ioc, request, cb);
+    executeInContext(ioc, request, cb, onProgress);
     ioc.run();
+}
+
+
+httb::batch_request::batch_request():
+    m_concurrency(std::thread::hardware_concurrency()),
+    m_ctx(m_concurrency) {
+}
+
+httb::batch_request::batch_request(uint32_t concurrency):
+    m_concurrency(concurrency),
+    m_ctx(m_concurrency) {
+
+}
+
+const httb::batch_request &httb::batch_request::add(httb::request &&req) {
+    m_requests.push_back(std::move(req));
+    return *this;
+}
+
+const httb::batch_request &httb::batch_request::add(const httb::request &req) {
+    m_requests.push_back(req);
+    return *this;
+}
+
+void httb::batch_request::runEach(const httb::batch_request::on_response_each_func &cb) {
+    while(!m_requests.empty()) {
+        auto req = m_requests.back();
+        m_requests.pop_back();
+        m_client.executeInContext(m_ctx, req, cb);
+    }
+    m_ctx.run();
+}
+
+void httb::batch_request::runAll(const httb::batch_request::on_response_all_func &cb) {
+    std::vector<httb::response> out;
+    out.reserve(m_requests.size());
+    std::mutex resLock;
+
+    while(!m_requests.empty()) {
+        auto req = m_requests.back();
+        m_requests.pop_back();
+        m_client.executeInContext(m_ctx, req, [&resLock, &out](httb::response result) {
+            std::lock_guard<std::mutex> lock(resLock);
+            out.push_back(std::move(result));
+        });
+    }
+    m_ctx.run();
+
+    cb(out);
 }

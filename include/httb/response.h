@@ -13,21 +13,18 @@
 #include <string>
 #include <boost/beast.hpp>
 #include "httb/io_container.h"
-//#include "httb/client.h"
 
 namespace httb {
+
+
 class response : public httb::io_container {
 public:
     static const int INTERNAL_ERROR_OFFSET = 1000;
     friend class client;
     using http_status = boost::beast::http::status;
 
-    int statusCode;
-    http_status status;
+    virtual ~response() = default;
 
-    std::string statusMessage;
-    std::string data;
-    std::string _headersBuffer;
     /// \brief Return map of POST body form-url-encoded data
     /// \return
     kv_vector parseFormUrlEncode() const;
@@ -47,6 +44,13 @@ public:
     /// \return
     bool isSuccess() const;
     bool isInternalError();
+
+    int statusCode;
+    http_status status;
+
+    std::string statusMessage;
+    std::string data;
+    std::string _headersBuffer;
 };
 }
 

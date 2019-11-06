@@ -61,9 +61,13 @@ class HttbConan(ConanFile):
         cmake.build()
 
     def package(self):
-        self.copy("*.h", dst="include", src="include", keep_path=True)
-        self.copy("*httb.lib", dst="lib", keep_path=False)
-        self.copy("*.dll", dst="bin", keep_path=False)
+        self.copy("*", dst="include", src="include", keep_path=True)
+        self.copy("*.lib", dst="lib", keep_path=False)
+        self.copy("*.dll", dst="lib", keep_path=False)
+        self.copy("*.dll.a", dst="lib", keep_path=False)
+        self.copy("*.exp", dst="lib", keep_path=False)
+        self.copy("*.ilk", dst="lib", keep_path=False)
+        self.copy("*.pdb", dst="lib", keep_path=False)
         self.copy("*.so", dst="lib", keep_path=False)
         self.copy("*.dylib", dst="lib", keep_path=False)
         self.copy("*.a", dst="lib", keep_path=False)
