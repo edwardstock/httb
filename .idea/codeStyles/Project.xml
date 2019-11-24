@@ -1,18 +1,22 @@
 <component name="ProjectCodeStyleConfiguration">
   <code_scheme name="Project" version="173">
+    <option name="AUTODETECT_INDENTS" value="false" />
     <option name="OTHER_INDENT_OPTIONS">
       <value>
         <option name="CONTINUATION_INDENT_SIZE" value="4" />
+        <option name="USE_TAB_CHARACTER" value="true" />
         <option name="SMART_TABS" value="true" />
       </value>
     </option>
     <option name="LINE_SEPARATOR" value="&#10;" />
+    <option name="FORMATTER_TAGS_ENABLED" value="true" />
     <CMakeCodeStyleSettings>
       <option name="FORCE_COMMANDS_CASE" value="1" />
     </CMakeCodeStyleSettings>
     <Objective-C>
       <option name="INDENT_NAMESPACE_MEMBERS" value="0" />
       <option name="INDENT_C_STRUCT_MEMBERS" value="2" />
+      <option name="INDENT_VISIBILITY_KEYWORDS" value="1" />
       <option name="INDENT_INSIDE_CODE_BLOCK" value="2" />
       <option name="INDENT_DIRECTIVE_AS_CODE" value="true" />
       <option name="KEEP_STRUCTURES_IN_ONE_LINE" value="true" />
@@ -33,9 +37,9 @@
     <Objective-C-extensions>
       <option name="TAG_PREFIX_OF_BLOCK_COMMENT" value="BACK_SLASH" />
       <extensions>
-        <pair source="cpp" header="h" fileNamingConvention="SNAKE_CASE" />
-        <pair source="c" header="h" fileNamingConvention="SNAKE_CASE" />
-        <pair source="cpp" header="hpp" fileNamingConvention="PASCAL_CASE" />
+        <pair source="cpp" header="h" fileNamingConvention="NONE" />
+        <pair source="c" header="h" fileNamingConvention="NONE" />
+        <pair source="cpp" header="hpp" fileNamingConvention="NONE" />
       </extensions>
     </Objective-C-extensions>
     <XML>
@@ -64,19 +68,12 @@
       <option name="METHOD_CALL_CHAIN_WRAP" value="1" />
       <option name="BINARY_OPERATION_SIGN_ON_NEXT_LINE" value="true" />
       <option name="FOR_STATEMENT_WRAP" value="1" />
+      <option name="ARRAY_INITIALIZER_RBRACE_ON_NEXT_LINE" value="true" />
       <option name="ASSIGNMENT_WRAP" value="1" />
       <option name="ENUM_CONSTANTS_WRAP" value="2" />
       <indentOptions>
         <option name="CONTINUATION_INDENT_SIZE" value="4" />
         <option name="SMART_TABS" value="true" />
-      </indentOptions>
-    </codeStyleSettings>
-    <codeStyleSettings language="go">
-      <indentOptions>
-        <option name="INDENT_SIZE" value="4" />
-        <option name="CONTINUATION_INDENT_SIZE" value="4" />
-        <option name="TAB_SIZE" value="4" />
-        <option name="USE_TAB_CHARACTER" value="false" />
       </indentOptions>
     </codeStyleSettings>
   </code_scheme>

@@ -197,10 +197,18 @@ TEST(HttpClientTest, TestGetWithParams) {
 
 }
 
+#include "httb/body_string.h"
+
 TEST(HttpClientTest, TestSimplePost) {
     httb::request req("http://localhost:9000/simple-server.php/post");
     req.setMethod(httb::request::method::post);
-    req.setBody(httb::body_form_urlencoded("aaa=1&bbb=2&ccc=3"));
+
+    httb::body_string b1("aaa=1&bbb=2&ccc=3");
+    httb::body_form_urlencoded b2("aaa=1&bbb=2&ccc=3");
+
+    ASSERT_STREQ(b1.build(&req).c_str(), b2.build(&req).c_str());
+
+    req.setBody(b1);
     req.setHeader({"content-type", "application/x-www-form-urlencoded"});
 
     httb::client client;

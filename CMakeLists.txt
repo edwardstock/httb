@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.0)
 project(httb
-        VERSION 0.4.0
+        VERSION 0.4.1
         DESCRIPTION "Simple C++ Boost HTTP client"
         HOMEPAGE_URL "https://github.com/edwardstock/httb"
         LANGUAGES CXX
@@ -41,6 +41,7 @@ set(SOURCES
     src/request.cpp
     src/response.cpp
     src/io_container.cpp
+    src/body_string.cpp
     src/body_multipart.cpp
     src/body_form_urlencoded.cpp
     src/timer.cpp

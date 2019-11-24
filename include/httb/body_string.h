@@ -18,8 +18,7 @@ namespace httb {
 /// Use for simple requests, like JSON, or plain
 class body_string : public httb::request_body {
 public:
-    body_string(const std::string &body);
-    body_string(std::string &&body);
+    body_string(std::string body);
     virtual ~body_string();
 
     std::string build(httb::io_container *request) const override;

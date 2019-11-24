@@ -9,9 +9,7 @@
 
 #include "httb/body_string.h"
 
-httb::body_string::body_string(const std::string &body): m_body(body) {
-}
-httb::body_string::body_string(std::string &&body): m_body(std::move(body)) {
+httb::body_string::body_string(std::string body) : m_body(std::move(body)) {
 }
 
 httb::body_string::~body_string() {
@@ -19,5 +17,3 @@ httb::body_string::~body_string() {
 std::string httb::body_string::build(httb::io_container *) const {
     return m_body;
 }
- 
- 

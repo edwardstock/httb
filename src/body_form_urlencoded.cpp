@@ -66,9 +66,10 @@ std::string httb::body_form_urlencoded::build(httb::io_container *) const {
     size_t i = 0;
     for (auto &h: params) {
         out << h.first << "=" << h.second;
-        if (i != params.size() - 1) {
+        if (i < params.size() - 1) {
             out << "&";
         }
+        i++;
     }
 
     return out.str();
