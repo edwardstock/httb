@@ -38,4 +38,4 @@ CONAN_LOCAL=1 conan create . edwardstock/latest -s compiler.libcxx=${stdlibname}
 CONAN_LOCAL=1 conan create . edwardstock/latest -s compiler.libcxx=${stdlibname} -s build_type=Release --build=missing
 
 #conan export-pkg . httb/${VERS}@edwardstock/latest -f
-conan upload httb/${VERS}@edwardstock/latest --all -r=scatter
+conan upload httb/${VERS}@edwardstock/latest --all -r=edwardstock
