@@ -28,14 +28,14 @@ fi
 ## Deploy in latest channel
 if [ "${sysname}" == "Linux" ]
 then
-  CONAN_LOCAL=1 conan create . scatter/latest -s compiler.libcxx=${stdlibname}11 -s build_type=Debug --build=missing
+  CONAN_LOCAL=1 conan create . edwardstock/latest -s compiler.libcxx=${stdlibname}11 -s build_type=Debug --build=missing
 #  CONAN_LOCAL=1 conan export-pkg . minter/latest -s compiler.libcxx=${stdlibname}11 -s build_type=Debug -f
-  CONAN_LOCAL=1 conan create .  scatter/latest -s compiler.libcxx=${stdlibname}11 -s build_type=Release --build=missing
+  CONAN_LOCAL=1 conan create .  edwardstock/latest -s compiler.libcxx=${stdlibname}11 -s build_type=Release --build=missing
 #  CONAN_LOCAL=1 conan export-pkg . minter/latest -s compiler.libcxx=${stdlibname}11 -s build_type=Release -f
 fi
 
-CONAN_LOCAL=1 conan create . scatter/latest -s compiler.libcxx=${stdlibname} -s build_type=Debug --build=missing
-CONAN_LOCAL=1 conan create . scatter/latest -s compiler.libcxx=${stdlibname} -s build_type=Release --build=missing
+CONAN_LOCAL=1 conan create . edwardstock/latest -s compiler.libcxx=${stdlibname} -s build_type=Debug --build=missing
+CONAN_LOCAL=1 conan create . edwardstock/latest -s compiler.libcxx=${stdlibname} -s build_type=Release --build=missing
 
-#conan export-pkg . httb/${VERS}@scatter/latest -f
-conan upload httb/${VERS}@scatter/latest --all -r=scatter
+#conan export-pkg . httb/${VERS}@edwardstock/latest -f
+conan upload httb/${VERS}@edwardstock/latest --all -r=scatter
