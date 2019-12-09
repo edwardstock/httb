@@ -7,7 +7,7 @@ Lightweight C++ HTTP Client based on Boost.Beast
 
 ## Features
  * Any request type
- * Bundled SSL support (OpenSSL 1.1.1) with system root certs autoloading
+ * Bundled SSL support (OpenSSL 1.1.1b)
  * Request builder
  * Follow redirects
  * Multipart body
@@ -27,12 +27,12 @@ int main() {
 
     httb::request request("http://localhost:9000/simple-server.php/get");
     httb::client client;
-    client.setVerbose(true, std::cout);
+    client.set_verbose(true, std::cout);
 
     // this is a blocking async method, wait for response
     client.execute(request, [](httb::response resp) {
-        std::cout << "Resp body:    " << resp.getBody() << std::endl;
-        std::cout << "Resp message: " << resp.statusMessage << std::endl;
+        std::cout << "Resp body:    " << resp.body() << std::endl;
+        std::cout << "Resp message: " << resp.status_message << std::endl;
     });
 
 
@@ -40,11 +40,11 @@ int main() {
     // httb::context is an alias for boost::asio::io_context
     httb::context ioctx(2);
 
-    client.executeInContext(ioctx, request, []{httb::response resp} {
+    client.execute_in_context(ioctx, request, []{httb::response resp} {
         //...
     });
 
-    client.executeInContext(ioctx, request, []{httb::response resp} {
+    client.execute_in_context(ioctx, request, []{httb::response resp} {
         //...
     });
 
@@ -66,16 +66,16 @@ int main() {
 int main() {
 
     httb::request req("http://localhost:9000/simple-server.php/post");
-    req.setMethod(httb::request::method::post);
-    req.setBody("aaa=1&bbb=2&ccc=3");
-    req.setHeader({"content-type", "application/x-www-form-urlencoded"});
+    req.set_method(httb::request::method::post);
+    req.set_body("aaa=1&bbb=2&ccc=3");
+    req.set_header({"content-type", "application/x-www-form-urlencoded"});
     
     httb::client client;
-    client.setVerbose(true);
+    client.set_verbose(true);
     client.execute(req, [](httb::response resp) {
-        if(!resp.isSuccess()) {
+        if(!resp.success()) {
                 std::cout << "Error response:" << std::endl;
-                std::cout << resp.getBody() << std::endl;
+                std::cout << resp.body() << std::endl;
         }
     });
     
@@ -91,29 +91,30 @@ int main() {
 int main() {
 
     httb::request req("http://localhost:9000/simple-server.php/post");
-    req.setMethod(httb::request::method::post);
-    req.setHeader({"content-type", "application/x-www-form-urlencoded"});
+    req.set_method(httb::request::method::post);
+    req.set_header({"content-type", "application/x-www-form-urlencoded"});
     
     httb::body_multipart body;
 
     // you can load in memory file body by yourself
-    httb::file_body_entry fileBodyEntry = {"myfile.txt", "text/plain", loadMyFileToString()};
-    body.addEntry({"myfile", fileBodyEntry});
+    // TODO: use io streams
+    httb::file_body_entry fb = {"myfile.txt", "text/plain", load_my_file_to_string()};
+    body.add_entry({"myfile", fb});
 
     // or use lazy function
     httb::file_path_entry filePathEntry = {"myfile.txt", "text/plain", "/path/to/file.txt"}
-    body.addEntry({"myfile", filePathEntry});
+    body.add_entry({"myfile", filePathEntry});
 
-    body.addEntry({"my_post_key", "post_value"});
+    body.add_entry({"my_post_key", "post_value"});
     
-    req.setBody(body);
+    req.set_body(body);
     
     httb::client client;
-    client.setVerbose(true);
-    client.executeBlocking(req, [](httb::response resp){
-        if(!resp.isSuccess()) {
+    client.set_verbose(true);
+    client.execute_blocking(req, [](httb::response resp){
+        if(!resp.success()) {
             std::cout << "Error response:" << std::endl;
-            std::cout << resp.getBody() << std::endl;
+            std::cout << resp.body() << std::endl;
         }
     });
     
@@ -126,41 +127,37 @@ int main() {
 const std::string src = "https://www.google.com/search?q=boost+beast&oq=boost+beast&aqs=chrome.0.69i59l3j69i60l3.2684j1j9&sourceid=chrome&ie=UTF-8";
 httb::request req(src);
 
-req.isSSL()              // true
-req.getProtocolName()    // "https"
-req.getPort()            // (uint16_t) 443
-req.getPortString()      // "443"
-req.getHost()            // "www.google.com");
-req.getPath()            // "/search"
-req.getQueryString()     // "?q=boost+beast&oq=boost+beast&aqs=chrome.0.69i59l3j69i60l3.2684j1j9&sourceid=chrome&ie=UTF-8");
-req.getQuery("q")        // "boost+beast"
-req.getQuery("oq")       // "boost+beast"
-req.getQuery("aqs")      // "chrome.0.69i59l3j69i60l3.2684j1j9"
-req.getQuery("sourceid") // "chrome"
-req.getQuery("ie")       // "UTF-8"
-
-req.addQuery({"param", "value"});
-req.addQuery({"array[]", "val1"});
-req.addQuery({"array[]", "val2"});
+req.is_ssl();                    // true
+req.get_proto_name();            // "https"
+req.get_port();                  // (uint16_t) 443
+req.get_port_str();              // "443"
+req.get_host();                  // "www.google.com");
+req.get_path();                  // "/search"
+req.get_query_string();          // "?q=boost+beast&oq=boost+beast&aqs=chrome.0.69i59l3j69i60l3.2684j1j9&sourceid=chrome&ie=UTF-8");
+req.get_query_value("q");        // "boost+beast"
+req.get_query_value("oq");       // "boost+beast"
+req.get_query_value("aqs");      // "chrome.0.69i59l3j69i60l3.2684j1j9"
+req.get_query_value("sourceid"); // "chrome"
+req.get_query_value("ie");       // "UTF-8"
 
 // get array params
-std::vector<std::string> arParams = req.getQueryArray("array[]", true);
+std::vector<std::string> arParams = req.get_query_array("array[]", true);
 
-req.addQuery({
+req.add_query({
     {"aaa", "vvv"},
     {"bbb", "vvv"}
 });
 
 // overwrite param
-req.setQuery({"param", "value1"})
+req.set_query({"param", "value1"})
 
-req.addHeader({"header-name", "header-value"});
-req.addHeaders(...as params...)
+req.add_header({"header-name", "header-value"});
+req.add_headers(...as params...)
 // overwrite header 
-req.setHeader({"user-agent", "Linkensphere 0.0.0"});
+req.set_header({"user-agent", "Linkensphere 0.0.0"});
 
 // set force ssl usage
-req.useSSL(true);
+req.use_ssl(true);
 ```
 
 See more examples in [test](tests/HttpClientTest.cpp)

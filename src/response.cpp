@@ -7,20 +7,23 @@
  * \link   https://github.com/edwardstock
  */
 
-#include <toolboxpp.hpp>
-#include "httb/defs.h"
 #include "httb/response.h"
 
-httb::kv_vector httb::response::parseFormUrlEncode() const {
+#include "httb/types.h"
+
+#include <iostream>
+#include <toolbox/strings.hpp>
+
+httb::kv_vector httb::response::parse_form_url_encode() const {
     if (data.empty()) {
         return {};
     }
 
-    std::vector<std::string> groups = toolboxpp::strings::split(data, '&');
+    std::vector<std::string> groups = toolbox::strings::split(data, '&');
 
     kv_vector kvData;
-    for (auto &&s: groups) {
-        kvData.push_back(toolboxpp::strings::splitPair(s, "="));
+    for (auto&& s : groups) {
+        kvData.push_back(toolbox::strings::split_pair(s, "="));
     }
 
     return kvData;
@@ -28,34 +31,34 @@ httb::kv_vector httb::response::parseFormUrlEncode() const {
 void httb::response::dump() const {
     std::cout << "Response: " << std::endl
               << "  Status: " << status << std::endl
-              << " Message: " << statusMessage << std::endl
+              << " Message: " << status_message << std::endl
               << "    Body: " << data << std::endl
               << " Headers:\n";
-    for (const auto &h: headers) {
+    for (const auto& h : m_headers) {
         std::cout << "\t" << h.first << ": " << h.second << std::endl;
     }
 }
-bool httb::response::isSuccess() const {
-    return statusCode >= 200 && statusCode < 400;
+bool httb::response::success() const {
+    return code >= 200 && code < 400;
 }
-std::string httb::response::getBody() const {
+std::string httb::response::get_body() const {
     return data;
 }
-const char *httb::response::getBodyC() const {
+const char* httb::response::get_body_c() const {
     return data.c_str();
 }
-bool httb::response::hasBody() const {
+bool httb::response::has_body() const {
     return !data.empty();
 }
-void httb::response::setBody(const std::string &body) {
+void httb::response::set_body(const std::string& body) {
     data = body;
 }
-void httb::response::setBody(std::string &&body) {
+void httb::response::set_body(std::string&& body) {
     data = std::move(body);
 }
-size_t httb::response::getBodySize() const {
+size_t httb::response::get_body_size() const {
     return data.length();
 }
-bool httb::response::isInternalError() {
-    return statusCode >= INTERNAL_ERROR_OFFSET || statusCode < 0;
+bool httb::response::is_internal_error() {
+    return code >= INTERNAL_ERROR_OFFSET || code < 0;
 }

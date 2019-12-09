@@ -10,19 +10,11 @@
 #ifndef HTTB_HTTB_H
 #define HTTB_HTTB_H
 
-#include <string>
-#include <unordered_map>
-#include "types.h"
-#include "io_container.h"
-#include "response.h"
-#include "request.h"
-#include "client.h"
 #include "body.h"
-
-namespace httb {
-
-
-} // httb
-
+#include "client.h"
+#include "io_container.h"
+#include "request.h"
+#include "response.h"
+#include "types.h"
 
 #endif //HTTB_HTTB_H

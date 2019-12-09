@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 set -e
 set -x
-VERS=`git rev-parse --short HEAD`
 if [ -f "version" ]
 then
     VERS=`cat version | tr -d "\n"`
@@ -29,13 +28,13 @@ fi
 if [ "${sysname}" == "Linux" ]
 then
   CONAN_LOCAL=1 conan create . edwardstock/latest -s compiler.libcxx=${stdlibname}11 -s build_type=Debug --build=missing
-#  CONAN_LOCAL=1 conan export-pkg . minter/latest -s compiler.libcxx=${stdlibname}11 -s build_type=Debug -f
   CONAN_LOCAL=1 conan create .  edwardstock/latest -s compiler.libcxx=${stdlibname}11 -s build_type=Release --build=missing
-#  CONAN_LOCAL=1 conan export-pkg . minter/latest -s compiler.libcxx=${stdlibname}11 -s build_type=Release -f
 fi
 
 CONAN_LOCAL=1 conan create . edwardstock/latest -s compiler.libcxx=${stdlibname} -s build_type=Debug --build=missing
 CONAN_LOCAL=1 conan create . edwardstock/latest -s compiler.libcxx=${stdlibname} -s build_type=Release --build=missing
 
-#conan export-pkg . httb/${VERS}@edwardstock/latest -f
-conan upload httb/${VERS}@edwardstock/latest --all -r=edwardstock
+if [ "${NOUPLOAD}" != "1" ]
+then
+	conan upload httb/${VERS}@edwardstock/latest --all -r=edwardstock
+fi

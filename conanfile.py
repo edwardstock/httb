@@ -44,10 +44,12 @@ class HttbConan(ConanFile):
     default_channel = "latest"
 
     requires = (
-        "OpenSSL/1.1.1a@conan/stable",
-        "toolboxpp/2.2.0@scatter/latest",
+        "OpenSSL/1.1.1b@conan/stable",
+        "toolbox/3.0.0@edwardstock/latest",
         "boost/1.70.0@conan/stable",
-        ("gtest/1.8.1@bincrafters/stable", "private"),
+    )
+    build_requires = (
+        "gtest/1.8.1@bincrafters/stable"
     )
 
     def source(self):

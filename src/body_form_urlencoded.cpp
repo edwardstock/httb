@@ -8,7 +8,8 @@
  */
 
 #include "httb/body_form_urlencoded.h"
-#include <toolboxpp.hpp>
+
+#include <toolbox/strings.hpp>
 
 httb::body_form_urlencoded &httb::body_form_urlencoded::add_param(const httb::kv &param) {
     params.push_back(param);
@@ -79,32 +80,32 @@ httb::body_form_urlencoded::~body_form_urlencoded() {
 }
 
 httb::body_form_urlencoded::body_form_urlencoded(const std::string &encodedParamsString) {
-    parseParams(encodedParamsString);
+    parse_params(encodedParamsString);
 }
-httb::body_form_urlencoded::body_form_urlencoded(std::string &&encodedParamsString) {
-    parseParams(std::move(encodedParamsString));
+httb::body_form_urlencoded::body_form_urlencoded(std::string&& encodedParamsString) {
+    parse_params(std::move(encodedParamsString));
 }
-void httb::body_form_urlencoded::parseParams(const std::string &encoded) {
+void httb::body_form_urlencoded::parse_params(const std::string& encoded) {
     std::string query = encoded;
     if (query[0] == '?') {
         query = query.substr(1, query.length());
     }
 
-    std::vector<std::string> pairs = toolboxpp::strings::split(query, "&");
+    std::vector<std::string> pairs = toolbox::strings::split(query, "&");
 
-    for (const auto &param: pairs) {
-        add_param(toolboxpp::strings::splitPair(param, "="));
+    for (const auto& param : pairs) {
+        add_param(toolbox::strings::split_pair(param, "="));
     }
 }
-void httb::body_form_urlencoded::parseParams(std::string &&encoded) {
+void httb::body_form_urlencoded::parse_params(std::string&& encoded) {
     std::string query = std::move(encoded);
     if (query[0] == '?') {
         query = query.substr(1, query.length());
     }
 
-    std::vector<std::string> pairs = toolboxpp::strings::split(query, "&");
+    std::vector<std::string> pairs = toolbox::strings::split(query, "&");
 
-    for (const auto &param: pairs) {
-        add_param(toolboxpp::strings::splitPair(param, "="));
+    for (const auto& param : pairs) {
+        add_param(toolbox::strings::split_pair(param, "="));
     }
 }

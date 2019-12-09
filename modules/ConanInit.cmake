@@ -59,7 +59,7 @@ endfunction ()
 macro (conan_init)
 	include(ConanBuild)
 	conan_cmake_run(
-		CONANFILE conanfile.txt
+		CONANFILE conanfile.py
 		BUILD missing
 		BASIC_SETUP
 	)

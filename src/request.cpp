@@ -7,62 +7,64 @@
  * \link   https://github.com/edwardstock
  */
 
-#include <string>
-#include <sstream>
-#include <thread>
-#include <boost/regex.hpp>
-#include <toolboxpp.hpp>
-#include <httb/types.h>
 #include "httb/request.h"
-#include "httb/helpers.hpp"
+
+#include "utils.h"
+
+#include <boost/regex.hpp>
+#include <httb/types.h>
+#include <sstream>
+#include <string>
+#include <toolbox/strings.hpp>
+#include <toolbox/strings/regex.h>
 
 // REQUEST
-httb::base_request::base_request() :
-    io_container(),
-    m_ssl(false),
-    m_method(method::get),
-    m_proto("http"),
-    m_host(""),
-    m_port("80"),
-    m_path("/") {
+httb::base_request::base_request()
+    : io_container(),
+      m_ssl(false),
+      m_method(method::get),
+      m_proto("http"),
+      m_host(""),
+      m_port("80"),
+      m_path("/") {
 }
 
-httb::base_request::base_request(const std::string &url) :
-    io_container(),
-    m_ssl(false),
-    m_method(method::get),
-    m_proto("http"),
-    m_host(""),
-    m_port("80"),
-    m_path("/") {
-    parseUrl(url);
+httb::base_request::base_request(const std::string& url)
+    : io_container(),
+      m_ssl(false),
+      m_method(method::get),
+      m_proto("http"),
+      m_host(""),
+      m_port("80"),
+      m_path("/") {
+    parse_url(url);
 }
 
-httb::base_request::base_request(const std::string &url, uint16_t port) :
-    io_container(),
-    m_ssl(false),
-    m_method(method::get),
-    m_proto("http"),
-    m_host(""),
-    m_path("/") {
+httb::base_request::base_request(const std::string& url, uint16_t port)
+    : io_container(),
+      m_ssl(false),
+      m_method(method::get),
+      m_proto("http"),
+      m_host(""),
+      m_path("/") {
     std::stringstream ss;
     ss << port;
     m_port = ss.str();
-    parseUrl(url);
+    parse_url(url);
 }
 
-httb::base_request::base_request(const std::string &url, httb::base_request::method method) :
-    io_container(),
-    m_ssl(false),
-    m_method(method),
-    m_proto("http"),
-    m_host(""),
-    m_port("80"),
-    m_path("/") {
-    parseUrl(url);
+httb::base_request::base_request(const std::string& url, httb::base_request::method method)
+    : io_container(),
+      m_ssl(false),
+      m_method(method),
+      m_proto("http"),
+      m_host(""),
+      m_port("80"),
+      m_path("/") {
+    parse_url(url);
 }
 
-inline std::vector<std::string> mreg(const boost::regex &re, const std::string &source) {
+inline std::vector<std::string> mreg(const boost::regex& re, const std::string& source) {
     boost::smatch result;
     boost::regex_search(source, result, re);
 
@@ -75,12 +77,12 @@ inline std::vector<std::string> mreg(const boost::regex &re, const std::string &
     return out;
 }
 
-void httb::base_request::parseUrl(const std::string &url) {
+void httb::base_request::parse_url(const std::string& url) {
     std::string urlParseRegex =
         R"(([a-zA-Z]+)\:\/\/([a-zA-Z0-9\.\-_]+)?\:?([0-9]{1,5})?(\/[a-zA-Z0-9\/\+\-\.\%\/_]*)?\??([a-zA-Z0-9\-_\+\=\&\%\.]*))";
 
     auto res = mreg(boost::regex(urlParseRegex), url);
-    if (!toolboxpp::strings::hasRegex(urlParseRegex, url)) {
+    if (!toolbox::strings::matches_pattern(urlParseRegex, url)) {
         return;
     }
 
@@ -90,10 +92,10 @@ void httb::base_request::parseUrl(const std::string &url) {
     m_path = res[4];
     std::string paramsString = res[5];
 
-    if (toolboxpp::strings::equalsIgnoreCase(m_proto, "https")) {
+    if (toolbox::strings::equals_icase(m_proto, "https")) {
         m_port = "443";
         m_ssl = true;
-    } else if (toolboxpp::strings::equalsIgnoreCase(m_proto, "ftp")) {
+    } else if (toolbox::strings::equals_icase(m_proto, "ftp")) {
         m_port = "20";
         m_ssl = false;
     }
@@ -103,85 +105,91 @@ void httb::base_request::parseUrl(const std::string &url) {
     }
 
     if (!paramsString.empty()) {
-        auto kvs = toolboxpp::strings::split(paramsString, '&');
-        for (auto &item: kvs) {
-            auto kv = toolboxpp::strings::splitPair(item, '=');
+        auto kvs = toolbox::strings::split(paramsString, '&');
+        for (auto& item : kvs) {
+            auto kv = toolbox::strings::split_pair(item, '=');
             m_params.push_back({kv.first, kv.second});
         }
     }
 }
 
-void httb::base_request::parseQuery(const std::string &queryString) {
-    std::string query = queryString;
+void httb::base_request::parse_query(const std::string& query_string) {
+    std::string query = query_string;
     if (query[0] == '?') {
         query = query.substr(1, query.length());
     }
 
-    std::vector<std::string> pairs = toolboxpp::strings::split(query, "&");
+    std::vector<std::string> pairs = toolbox::strings::split(query, "&");
 
-    for (const auto &param: pairs) {
-        addQuery(toolboxpp::strings::splitPair(param, "="));
+    for (const auto& param : pairs) {
+        add_query(toolbox::strings::split_pair(param, "="));
     }
 }
 
-httb::base_request::method httb::base_request::MethodFromString(const std::string &method_name) {
-    using toolboxpp::strings::equalsIgnoreCase;
+httb::base_request::method httb::base_request::method_from_string(const std::string& method_name) {
+    using toolbox::strings::equals_icase;
 
-    if (equalsIgnoreCase(method_name, "POST")) {
+    if (equals_icase(method_name, "POST")) {
         return httb::base_request::method::post;
-    } else if (equalsIgnoreCase(method_name, "PUT")) {
+    } else if (equals_icase(method_name, "PUT")) {
         return method::put;
-    } else if (equalsIgnoreCase(method_name, "DELETE")) {
+    } else if (equals_icase(method_name, "DELETE")) {
         return method::delete_;
-    } else if (equalsIgnoreCase(method_name, "HEAD")) {
+    } else if (equals_icase(method_name, "HEAD")) {
         return method::head;
     }
 
     return method::get;
 }
 
-std::string httb::base_request::MethodToString(httb::base_request::method methodName) {
+std::string httb::base_request::method_to_string(httb::base_request::method methodName) {
     std::string out;
 
     switch (methodName) {
-        case method::post:out = "POST";
-            break;
-        case method::put:out = "PUT";
-            break;
-        case method::delete_:out = "DELETE";
-            break;
-        case method::head: out = "HEAD";
-            break;
-        case method::get: out = "GET";
-            break;
+    case method::post:
+        out = "POST";
+        break;
+    case method::put:
+        out = "PUT";
+        break;
+    case method::delete_:
+        out = "DELETE";
+        break;
+    case method::head:
+        out = "HEAD";
+        break;
+    case method::get:
+        out = "GET";
+        break;
 
-        default: out = "UnsupportedMethod";
+    default:
+        out = "UnsupportedMethod";
     }
 
     return out;
 }
 
-void httb::base_request::setMethod(httb::base_request::method method) {
+void httb::base_request::set_method(httb::base_request::method method) {
     this->m_method = method;
 }
 
-void httb::base_request::addQuery(httb::kv &&keyValue) {
+void httb::base_request::add_query(httb::kv&& keyValue) {
     m_params.push_back(std::move(keyValue));
 }
 
-void httb::base_request::addQuery(kvd &&keyValue) {
+void httb::base_request::add_query(kvd&& keyValue) {
     auto tmp = std::move(keyValue);
     std::stringstream ss;
     ss << tmp.second;
 
-    addQuery({tmp.first, ss.str()});
+    add_query({tmp.first, ss.str()});
 }
 
-void httb::base_request::useSSL(bool useSSL) {
-    m_ssl = useSSL;
+void httb::base_request::use_ssl(bool use) {
+    m_ssl = use;
 }
 
-std::string httb::base_request::getUrl() const {
+std::string httb::base_request::get_url() const {
     std::stringstream ss;
 
     ss << m_proto << "://";
@@ -196,32 +204,32 @@ std::string httb::base_request::getUrl() const {
         ss << "/";
     }
 
-    if (hasQuery()) {
-        ss << getQueryString();
+    if (has_query()) {
+        ss << get_query_string();
     }
 
     return ss.str();
 }
 
-httb::base_request::method httb::base_request::getMethod() const {
+httb::base_request::method httb::base_request::get_method() const {
     return m_method;
 }
 
-bool httb::base_request::hasQuery() const {
+bool httb::base_request::has_query() const {
     return !m_params.empty();
 }
 
-bool httb::base_request::hasQuery(const std::string &key, bool icase) const {
-    using toolboxpp::strings::equalsIgnoreCase;
-    const auto &cmp = [icase](const std::string &lhs, const std::string &rhs) {
-      if (icase) {
-          return equalsIgnoreCase(lhs, rhs);
-      } else {
-          return lhs == rhs;
-      }
+bool httb::base_request::has_query(const std::string& key, bool icase) const {
+    using toolbox::strings::equals_icase;
+    const auto& cmp = [icase](const std::string& lhs, const std::string& rhs) {
+        if (icase) {
+            return equals_icase(lhs, rhs);
+        } else {
+            return lhs == rhs;
+        }
     };
 
-    for (const auto &param: m_params) {
+    for (const auto& param : m_params) {
         if (cmp(param.first, key)) {
             return true;
         }
@@ -230,16 +238,16 @@ bool httb::base_request::hasQuery(const std::string &key, bool icase) const {
     return false;
 }
 
-std::string httb::base_request::getQuery(const std::string &key, bool icase) const {
-    using toolboxpp::strings::equalsIgnoreCase;
-    const auto &cmp = [icase](const std::string &lhs, const std::string &rhs) {
-      if (icase) {
-          return equalsIgnoreCase(lhs, rhs);
-      } else {
-          return lhs == rhs;
-      }
+std::string httb::base_request::get_query_value(const std::string& key, bool icase) const {
+    using toolbox::strings::equals_icase;
+    const auto& cmp = [icase](const std::string& lhs, const std::string& rhs) {
+        if (icase) {
+            return equals_icase(lhs, rhs);
+        } else {
+            return lhs == rhs;
+        }
     };
-    for (const auto &param: m_params) {
+    for (const auto& param : m_params) {
         if (cmp(param.first, key)) {
             return param.second;
         }
@@ -248,54 +256,54 @@ std::string httb::base_request::getQuery(const std::string &key, bool icase) con
     return std::string();
 }
 
-boost::optional<httb::kv> httb::base_request::getQueryEntry(const std::string &key, bool icase) const {
+boost::optional<httb::kv> httb::base_request::find_query(const std::string& key, bool icase) const {
     boost::optional<httb::kv> out;
-    using toolboxpp::strings::equalsIgnoreCase;
-    const auto &cmp = [icase](const std::string &lhs, const std::string &rhs) {
-      if (icase) {
-          return equalsIgnoreCase(lhs, rhs);
-      } else {
-          return lhs == rhs;
-      }
+    using toolbox::strings::equals_icase;
+    const auto& cmp = [icase](const std::string& lhs, const std::string& rhs) {
+        if (icase) {
+            return equals_icase(lhs, rhs);
+        } else {
+            return lhs == rhs;
+        }
     };
-    for (const auto &param: m_params) {
+    for (const auto& param : m_params) {
         if (cmp(param.first, key)) {
             out = param;
             break;
         }
     }
 
-   return out;
+    return out;
 }
 
-void httb::base_request::setQuery(const std::string &key, const std::string &value, bool icase) {
-    using toolboxpp::strings::equalsIgnoreCase;
-    const auto &cmp = [icase](const std::string &lhs, const std::string &rhs) {
-      if (icase) {
-          return equalsIgnoreCase(lhs, rhs);
-      } else {
-          return lhs == rhs;
-      }
+void httb::base_request::set_query(const std::string& key, const std::string& value, bool icase) {
+    using toolbox::strings::equals_icase;
+    const auto& cmp = [icase](const std::string& lhs, const std::string& rhs) {
+        if (icase) {
+            return equals_icase(lhs, rhs);
+        } else {
+            return lhs == rhs;
+        }
     };
-    for (auto &param: m_params) {
+    for (auto& param : m_params) {
         if (cmp(param.first, key)) {
             param.second = value;
         }
     }
 }
 
-void httb::base_request::setQuery(const httb::kv &kv, bool icase) {
-    setQuery(kv.first, kv.second, icase);
+void httb::base_request::set_query(const httb::kv& kv, bool icase) {
+    set_query(kv.first, kv.second, icase);
 }
 
-bool httb::base_request::removeQueryArray(const std::string &key, size_t index, bool icase) {
-    using toolboxpp::strings::equalsIgnoreCase;
-    const auto &cmp = [icase](const std::string &lhs, const std::string &rhs) {
-      if (icase) {
-          return equalsIgnoreCase(lhs, rhs);
-      } else {
-          return lhs == rhs;
-      }
+bool httb::base_request::remove_query_array(const std::string& key, size_t index, bool icase) {
+    using toolbox::strings::equals_icase;
+    const auto& cmp = [icase](const std::string& lhs, const std::string& rhs) {
+        if (icase) {
+            return equals_icase(lhs, rhs);
+        } else {
+            return lhs == rhs;
+        }
     };
 
     size_t foundCount = 0;
@@ -319,14 +327,14 @@ bool httb::base_request::removeQueryArray(const std::string &key, size_t index, 
     return erasedItems > 0;
 }
 
-bool httb::base_request::removeQuery(const std::string &key, bool icase) {
-    using toolboxpp::strings::equalsIgnoreCase;
-    const auto &cmp = [icase](const std::string &lhs, const std::string &rhs) {
-      if (icase) {
-          return equalsIgnoreCase(lhs, rhs);
-      } else {
-          return lhs == rhs;
-      }
+bool httb::base_request::remove_query(const std::string& key, bool icase) {
+    using toolbox::strings::equals_icase;
+    const auto& cmp = [icase](const std::string& lhs, const std::string& rhs) {
+        if (icase) {
+            return equals_icase(lhs, rhs);
+        } else {
+            return lhs == rhs;
+        }
     };
 
     int foundCount = 0;
@@ -344,19 +352,27 @@ bool httb::base_request::removeQuery(const std::string &key, bool icase) {
     return foundCount > 0;
 }
 
-std::vector<std::string> httb::base_request::getQueryArray(const std::string &key, bool icase) const {
+void httb::base_request::clear_queries() {
+    m_params.clear();
+}
+
+size_t httb::base_request::queries_size() const {
+    return m_params.size();
+}
+
+std::vector<std::string> httb::base_request::get_query_array(const std::string& key, bool icase) const {
     std::vector<std::string> out;
 
-    using toolboxpp::strings::equalsIgnoreCase;
-    const auto &cmp = [icase](const std::string &lhs, const std::string &rhs) {
-      if (icase) {
-          return equalsIgnoreCase(lhs, rhs);
-      } else {
-          return lhs == rhs;
-      }
+    using toolbox::strings::equals_icase;
+    const auto& cmp = [icase](const std::string& lhs, const std::string& rhs) {
+        if (icase) {
+            return equals_icase(lhs, rhs);
+        } else {
+            return lhs == rhs;
+        }
     };
 
-    for (const auto &param: m_params) {
+    for (const auto& param : m_params) {
         if (cmp(param.first, key)) {
             out.push_back(param.second);
         }
@@ -365,71 +381,71 @@ std::vector<std::string> httb::base_request::getQueryArray(const std::string &ke
     return out;
 }
 
-std::string httb::base_request::getQueryString() const {
+std::string httb::base_request::get_query_string() const {
     std::string combined;
     if (!m_params.empty()) {
         std::stringstream ss;
         std::vector<std::string> enc;
-        for (auto &p: m_params) {
+        for (auto& p : m_params) {
             ss << p.first << "=" << p.second;
             enc.push_back(ss.str());
             ss.str("");
             ss.clear();
         }
-        std::string glued = toolboxpp::strings::glue("&", enc);
+        std::string glued = toolbox::strings::glue("&", enc);
         combined += "?" + glued;
     }
 
     return combined;
 }
 
-const httb::kv_vector &httb::base_request::getQueryList() const {
+const httb::kv_vector& httb::base_request::get_query_list() const {
     return m_params;
 }
 
-std::string httb::base_request::getHost() const {
+std::string httb::base_request::get_host() const {
     return m_host;
 }
 
-void httb::base_request::setHost(const std::string &hostname) {
+void httb::base_request::set_host(const std::string& hostname) {
     m_host = hostname;
 }
 
-uint16_t httb::base_request::getPort() const {
+uint16_t httb::base_request::get_port() const {
     const int port = std::stoi(m_port);
     return (uint16_t) port;
 }
 
-void httb::base_request::setPort(uint16_t portNumber) {
+void httb::base_request::set_port(uint16_t portNumber) {
     std::stringstream ss;
     ss << portNumber;
     m_port = ss.str();
 }
 
-std::string httb::base_request::getPortString() const {
+std::string httb::base_request::get_port_str() const {
     return m_port;
 }
 
-std::string httb::base_request::getProtocolName() const {
+std::string httb::base_request::get_proto_name() const {
     return m_proto;
 }
 
-void httb::base_request::setProtocolName(const std::string &protocolName) {
+void httb::base_request::set_proto_name(const std::string& protocolName) {
     m_proto = protocolName;
 }
 
-std::string httb::base_request::getPath() const {
-    if(m_path.empty()) {
+std::string httb::base_request::get_path() const {
+    if (m_path.empty()) {
         return "/";
     }
     return m_path;
 }
 
-std::string httb::base_request::getPathWithQuery() const {
-    return getPath() + getQueryString();
+std::string httb::base_request::get_path_with_query() const {
+    return get_path() + get_query_string();
 }
 
-void httb::base_request::setPath(const std::string &path) {
+void httb::base_request::set_path(const std::string& path) {
     if (m_path.length() == 0) {
         m_path = "/";
     } else if (m_path.length() > 0 && m_path[0] != '/') {
@@ -443,7 +459,7 @@ void httb::base_request::setPath(const std::string &path) {
     }
 }
 
-void httb::base_request::addPath(const std::string &path) {
+void httb::base_request::add_path(const std::string& path) {
     if (path.length() == 0 || (path.length() == 1 && path[0] == '/')) {
         return;
     }
@@ -467,15 +483,15 @@ void httb::base_request::addPath(const std::string &path) {
     }
 }
 
-bool httb::base_request::isSSL() const {
+bool httb::base_request::is_ssl() const {
     return m_ssl;
 }
 
-boost::beast::http::request<boost::beast::http::string_body> httb::request::createBeastRequest() const {
+boost::beast::http::request<boost::beast::http::string_body> httb::request::to_beast_request() const {
     namespace http = boost::beast::http;
 
-    http::request<http::string_body> req{getMethod(), getPathWithQuery(), 11};
-    req.set(http::field::host, getHost());
+    http::request<http::string_body> req{get_method(), get_path_with_query(), 11};
+    req.set(http::field::host, get_host());
 
     std::stringstream versionBuilder;
     versionBuilder << "httb/" << HTTB_VERSION;
@@ -484,27 +500,27 @@ boost::beast::http::request<boost::beast::http::string_body> httb::request::crea
     req.set(http::field::accept, "*/*");
     req.set(http::field::content_length, "0");
 
-    for (const auto &field: getHeaders()) {
+    for (const auto& field : get_headers()) {
         req.set(field.first, field.second);
     }
 
-    if (hasBody()) {
-        req.body() = getBody();
+    if (has_body()) {
+        req.body() = get_body();
         req.prepare_payload();
     }
 
     return req;
 }
-void httb::request::setBody(const std::string &body) {
-    io_container::setBody(body);
+void httb::request::set_body(const std::string& body) {
+    io_container::set_body(body);
 }
-void httb::request::setBody(std::string &&body) {
-    io_container::setBody(body);
+void httb::request::set_body(std::string&& body) {
+    io_container::set_body(body);
 }
-void httb::request::setBody(const httb::request_body &body) {
-    io_container::setBody(body.build(this));
+void httb::request::set_body(const httb::request_body& body) {
+    io_container::set_body(body.build(this));
 }
-void httb::request::setBody(httb::request_body &&body) {
+void httb::request::set_body(httb::request_body&& body) {
     std::string builtBody = body.build(this);
-    io_container::setBody(std::move(builtBody));
+    io_container::set_body(std::move(builtBody));
 }

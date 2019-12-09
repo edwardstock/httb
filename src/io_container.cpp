@@ -7,122 +7,175 @@
  * \link   https://github.com/edwardstock
  */
 
-#include <toolboxpp.hpp>
-#include <boost/utility/string_view.hpp>
 #include "httb/io_container.h"
-#include "httb/helpers.hpp"
 
+#include "utils.h"
+
+#include <algorithm>
+#include <toolbox/strings.hpp>
 
 // BASE IO
-httb::io_container::io_container() : body() { }
+httb::io_container::io_container()
+    : m_body() {
+}
 
-void httb::io_container::setBody(const std::string &data) {
-    this->body = data;
-    setHeader({"Content-Length", httb::utils::toString(this->body.length())});
+void httb::io_container::set_body(const std::string& data) {
+    m_body = data;
+    set_header({"Content-Length", httb::to_string(m_body.length())});
 }
-void httb::io_container::setBody(std::string &&data) {
-    this->body = std::move(data);
-    setHeader({"Content-Length", httb::utils::toString(this->body.length())});
+void httb::io_container::set_body(std::string&& data) {
+    m_body = std::move(data);
+    set_header({"Content-Length", httb::to_string(m_body.length())});
 }
-void httb::io_container::setHeader(httb::kv &&keyValue) {
-    using toolboxpp::strings::equalsIgnoreCase;
+void httb::io_container::set_header(httb::kv&& key_value) {
+    using toolbox::strings::equals_icase;
     bool found = false;
-    for (auto &kv: headers) {
-        if (equalsIgnoreCase(kv.first, keyValue.first)) {
-            kv.second = keyValue.second;
+    for (auto& kv : m_headers) {
+        if (equals_icase(kv.first, key_value.first)) {
+            kv.second = key_value.second;
             found = true;
         }
     }
 
     if (!found) {
-        return addHeader(std::move(keyValue));
+        return add_header(std::move(key_value));
     }
 }
-bool httb::io_container::containsHeader(const std::string &name) const {
-    using toolboxpp::strings::equalsIgnoreCase;
-    for (auto &h: headers) {
-        if (equalsIgnoreCase(h.first, name)) {
+bool httb::io_container::has_header(const std::string& name) const {
+    using toolbox::strings::equals_icase;
+    for (auto& h : m_headers) {
+        if (equals_icase(h.first, name)) {
             return true;
         }
     }
 
     return false;
 }
-std::pair<std::string, std::string> httb::io_container::searchHeaderPair(const std::string &name) const {
-    using toolboxpp::strings::equalsIgnoreCase;
-    for (auto &h: headers) {
-        if (equalsIgnoreCase(h.first, name)) {
-            return {h.first, h.second};
+
+boost::optional<httb::kv> httb::io_container::find_header_pair(const std::string& name) const {
+    boost::optional<httb::kv> out;
+    using toolbox::strings::equals_icase;
+    for (auto& h : m_headers) {
+        if (equals_icase(h.first, name)) {
+            out = h;
+            break;
         }
     }
 
-    return {};
+    return out;
 }
-std::string httb::io_container::getHeader(const std::string &headerName) const {
-    using toolboxpp::strings::equalsIgnoreCase;
-    for (auto &h: headers) {
-        if (equalsIgnoreCase(h.first, headerName)) {
+std::string httb::io_container::get_header_value(const std::string& headerName) const {
+    using toolbox::strings::equals_icase;
+    for (auto& h : m_headers) {
+        if (equals_icase(h.first, headerName)) {
             return h.second;
         }
     }
 
     return std::string();
 }
-bool httb::io_container::compareHeaderValue(const std::string &header_name, const std::string &comparable) const {
-    if (!containsHeader(header_name)) return false;
-    return getHeader(header_name) == comparable;
+bool httb::io_container::cmp_header_value(const std::string& header_name, const std::string& comparable) const {
+    if (!has_header(header_name))
+        return false;
+    return get_header_value(header_name) == comparable;
 }
-void httb::io_container::addHeader(const std::string &key, const std::string &value) {
-    headers.emplace_back(key, value);
-}
-void httb::io_container::addHeader(const boost::string_view &key, const boost::string_view &value) {
-    addHeader(key.to_string(), value.to_string());
-}
-void httb::io_container::addHeader(const httb::kv &keyValue) {
-    headers.push_back(keyValue);
-}
-void httb::io_container::addHeader(httb::kv &&keyValue) {
-    headers.push_back(std::move(keyValue));
-}
-void httb::io_container::addHeaders(const httb::kv_vector &values) {
-    headers.insert(headers.end(), values.begin(), values.end());
-}
-void httb::io_container::setHeaders(const httb::icase_map_t &map) {
-    for (auto &h: map) {
-        addHeader(h.first, h.second);
+void httb::io_container::add_header(const std::string& name, const std::string& value) {
+    using toolbox::strings::equals_icase;
+    for (auto& h : m_headers) {
+        if (equals_icase(h.first, name)) {
+            h.second = value;
+            return;
+        }
     }
+    m_headers.emplace_back(toolbox::strings::to_lower_case(name), value);
 }
-void httb::io_container::setHeaders(const httb::icase_multimap_t &mmp) {
-    for (auto &h: mmp) {
-        addHeader(h.first, h.second);
+void httb::io_container::add_header(const httb::kv& kv) {
+    add_header(kv.first, kv.second);
+}
+void httb::io_container::add_header(httb::kv&& kv) {
+    using toolbox::strings::equals_icase;
+    for (auto& h : m_headers) {
+        if (equals_icase(h.first, kv.first)) {
+            h.second = std::move(kv.second);
+            return;
+        }
     }
+    m_headers.push_back(std::move(kv));
 }
-std::string httb::io_container::getBody() const {
-    return body;
-}
-const char *httb::io_container::getBodyC() const {
-    const char *out = body.c_str();
-    return out;
-}
-std::size_t httb::io_container::getBodySize() const {
-    return body.length();
+void httb::io_container::add_headers(const httb::kv_vector& values) {
+    m_headers.reserve(m_headers.size() + values.size());
+    std::for_each(values.begin(), values.end(), [this](const httb::kv& pair) {
+        add_header(pair.first, pair.second);
+    });
 }
 
-bool httb::io_container::hasBody() const {
-    return !body.empty();
+bool httb::io_container::remove_header(const std::string& name, bool icase) {
+    using toolbox::strings::equals_icase;
+    bool removed = false;
+    size_t i = 0;
+    for (auto& h : m_headers) {
+        if (icase && equals_icase(h.first, name)) {
+            m_headers.erase(m_headers.begin() + i);
+            removed = true;
+        } else if (h.first == name) {
+            m_headers.erase(m_headers.begin() + i);
+            removed = true;
+        }
+
+        i++;
+    }
+
+    return removed;
 }
-bool httb::io_container::hasHeaders() const {
-    return !headers.empty();
+
+void httb::io_container::clear_headers() {
+    m_headers.clear();
 }
-const httb::kv_vector &httb::io_container::getHeaders() const {
-    return headers;
+size_t httb::io_container::headers_size() const {
+    return m_headers.size();
 }
-std::vector<std::string> httb::io_container::getHeadersGlued() const {
-    std::vector<std::string> out(headers.size());
+
+void httb::io_container::set_headers(const httb::icase_map_t& map) {
+    m_headers.reserve(m_headers.size() + map.size());
+    for (auto& h : map) {
+        add_header(h.first, h.second);
+    }
+}
+void httb::io_container::set_headers(const httb::icase_multimap_t& mmp) {
+    m_headers.reserve(m_headers.size() + mmp.size());
+    for (auto& h : mmp) {
+        add_header(h.first, h.second);
+    }
+}
+std::string httb::io_container::get_body() const {
+    return m_body;
+}
+const char* httb::io_container::get_body_c() const {
+    return m_body.c_str();
+}
+std::size_t httb::io_container::get_body_size() const {
+    return m_body.length();
+}
+
+void httb::io_container::clear_body() {
+    m_body.clear();
+}
+
+bool httb::io_container::has_body() const {
+    return !m_body.empty();
+}
+bool httb::io_container::has_headers() const {
+    return !m_headers.empty();
+}
+const httb::kv_vector& httb::io_container::get_headers() const {
+    return m_headers;
+}
+std::vector<std::string> httb::io_container::get_headers_glued() const {
+    std::vector<std::string> out(m_headers.size());
 
     std::stringstream ss;
     int i = 0;
-    for (const auto &h: headers) {
+    for (const auto& h : m_headers) {
         ss << h.first << ": " << h.second;
         out[i] = ss.str();
         ss.str("");
@@ -132,4 +185,3 @@ std::vector<std::string> httb::io_container::getHeadersGlued() const {
 
     return out;
 }
- 

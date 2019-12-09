@@ -21,12 +21,12 @@ public:
     body_string(std::string body);
     virtual ~body_string();
 
-    std::string build(httb::io_container *request) const override;
+    std::string build(httb::io_container* request) const override;
 
 private:
     std::string m_body;
 };
 
-}
+} // namespace httb
 
 #endif // HTTB_BODY_STRING_H

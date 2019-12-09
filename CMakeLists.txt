@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.0)
 project(httb
-        VERSION 0.4.1
+        VERSION 1.0.0
         DESCRIPTION "Simple C++ Boost HTTP client"
         HOMEPAGE_URL "https://github.com/edwardstock/httb"
         LANGUAGES CXX
@@ -18,23 +18,21 @@ add_conan_remote(scatter https://api.bintray.com/conan/edwardstock/scatter)
 add_conan_remote(edwardstock https://api.bintray.com/conan/edwardstock/conan-public)
 conan_init()
 
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_DEBUG_POSTFIX "" CACHE STRING "postfix")
 
 option(WITH_TESTS "Enable tests" OFF)
 
 set(HEADERS
-    include/httb/helpers.hpp
     include/httb/httb.h
     include/httb/io_container.h
-    include/httb/defs.h
     include/httb/body.h
     include/httb/body_multipart.h
     include/httb/body_form_urlencoded.h
     include/httb/body_string.h
-    include/httb/timer.h
-    include/httb/async_session.h
     include/httb/types.h
+    src/async_session.h
+    src/utils.h
     )
 
 set(SOURCES
@@ -45,7 +43,6 @@ set(SOURCES
     src/body_string.cpp
     src/body_multipart.cpp
     src/body_form_urlencoded.cpp
-    src/timer.cpp
     src/async_session.cpp
     )
 
@@ -57,7 +54,7 @@ target_compile_options(${PROJECT_NAME} PUBLIC -fPIC -pedantic -Wall -Wsign-compa
 target_include_directories(${PROJECT_NAME} PUBLIC include)
 
 target_link_libraries(${PROJECT_NAME} CONAN_PKG::boost)
-target_link_libraries(${PROJECT_NAME} CONAN_PKG::toolboxpp)
+target_link_libraries(${PROJECT_NAME} CONAN_PKG::toolbox)
 target_link_libraries(${PROJECT_NAME} CONAN_PKG::OpenSSL)
 
 if (HTTB_TEST)

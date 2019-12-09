@@ -15,7 +15,7 @@ TEST(HttpClient, ExecSession) {
     httb::request req("http://google.com");
 
     client.execute((req), [](httb::response resp) {
-      std::cout << "Resp body:    " << resp.getBody() << std::endl;
-      std::cout << "Resp message: " << resp.statusMessage << std::endl;
+        std::cout << "Resp body:    " << resp.get_body() << std::endl;
+        std::cout << "Resp message: " << resp.status_message << std::endl;
     });
 }

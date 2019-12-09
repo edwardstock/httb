@@ -7,33 +7,35 @@
  * \link   https://github.com/edwardstock
  */
 
-#include <random>
-#include <iostream>
-#include <toolboxpp.hpp>
 #include "httb/body_multipart.h"
 
-httb::multipart_entry::multipart_entry(const std::string &name, const std::string &body) :
-    m_name(name),
-    m_body(body) {
+#include "utils.h"
+
+#include <iostream>
+#include <random>
+#include <toolbox/io.h>
+
+httb::multipart_entry::multipart_entry(const std::string& name, const std::string& body)
+    : m_name(name),
+      m_body(body) {
 }
 
-httb::multipart_entry::multipart_entry(const std::string &name, const httb::file_path_entry &pathEntry) :
-    m_name(name),
-    m_contentType(pathEntry.contentType),
-    m_filename(pathEntry.filename) {
+httb::multipart_entry::multipart_entry(const std::string& name, const httb::file_path_entry& pathEntry)
+    : m_name(name),
+      m_contentType(pathEntry.content_type),
+      m_filename(pathEntry.filename) {
     m_bodyLoader = [pathEntry] {
-      return toolboxpp::fs::readFile(pathEntry.path);
+        return toolbox::io::file_read_full(pathEntry.path);
     };
 }
-httb::multipart_entry::multipart_entry(const std::string &name, const httb::file_body_entry &bodyEntry):
-    m_name(name),
-    m_contentType(bodyEntry.contentType),
-    m_filename(bodyEntry.filename),
-    m_body(bodyEntry.body) {
-
+httb::multipart_entry::multipart_entry(const std::string& name, const httb::file_body_entry& bodyEntry)
+    : m_name(name),
+      m_contentType(bodyEntry.content_type),
+      m_filename(bodyEntry.filename),
+      m_body(bodyEntry.body) {
 }
 
-std::string httb::multipart_entry::getBody() const {
+std::string httb::multipart_entry::body() const {
     if (m_body.empty()) {
         return m_bodyLoader();
     }
@@ -41,59 +43,58 @@ std::string httb::multipart_entry::getBody() const {
     return m_body;
 }
 
-std::string httb::multipart_entry::getName() const {
+std::string httb::multipart_entry::name() const {
     return m_name;
 }
-std::string httb::multipart_entry::getContentType() const {
+std::string httb::multipart_entry::content_type() const {
     return m_contentType;
 }
-std::string httb::multipart_entry::getFilename() const {
+std::string httb::multipart_entry::filename() const {
     return m_filename;
 }
 
-bool httb::multipart_entry::hasBody() const {
+bool httb::multipart_entry::has_body() const {
     return !m_body.empty() || (m_bodyLoader && !m_filename.empty());
 }
 
 httb::body_multipart::body_multipart() {
-    const std::string randomVal = genRandomString(8);
+    const std::string randomVal = httb::gen_random_string(8);
     std::string bname = "----HttbBoundary" + randomVal;
     this->boundaryName = std::move(bname);
 }
 
 httb::body_multipart::~body_multipart() {
-
 }
 
-httb::body_multipart &httb::body_multipart::addEntry(httb::multipart_entry &&entry) {
+httb::body_multipart& httb::body_multipart::add_entry(httb::multipart_entry&& entry) {
     m_entries.push_back(std::move(entry));
     return *this;
 }
 
-std::string httb::body_multipart::build(httb::io_container *request) const {
+std::string httb::body_multipart::build(httb::io_container* request) const {
     std::stringstream ss;
     size_t i = 0;
-    for (auto &&entry: m_entries) {
-        if (!entry.hasBody()) {
+    for (auto&& entry : m_entries) {
+        if (!entry.has_body()) {
             // warn
             continue;
         }
 
         ss << "--" << boundaryName << "\r\n";
-        ss << "Content-Disposition: format-data; name=\"" << entry.getName() << "\"";
-        if (!entry.getFilename().empty()) {
-            ss << "; filename=\"" << entry.getFilename() << "\"";
+        ss << "Content-Disposition: format-data; name=\"" << entry.name() << "\"";
+        if (!entry.filename().empty()) {
+            ss << "; filename=\"" << entry.filename() << "\"";
             ss << "\r\n";
         } else {
             ss << "\r\n";
         }
 
-        if (!entry.getContentType().empty()) {
-            ss << "Content-Type: " << entry.getContentType() << "\r\n";
+        if (!entry.content_type().empty()) {
+            ss << "Content-Type: " << entry.content_type() << "\r\n";
         }
 
         ss << "\r\n";
-        ss << entry.getBody();
+        ss << entry.body();
 
         if (i < m_entries.size() - 1) {
             ss << "\r\n";
@@ -101,28 +102,8 @@ std::string httb::body_multipart::build(httb::io_container *request) const {
         i++;
     }
 
-    request->setHeader({"Content-Type", "multipart/form-data; boundary=" + boundaryName});
+    request->set_header({"Content-Type", "multipart/form-data; boundary=" + boundaryName});
     const std::string res = ss.str();
 
     return res;
 }
-
-std::string httb::body_multipart::genRandomString(int length) {
-    std::string chars(
-        "abcdefghijklmnopqrstuvwxyz"
-        "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-        "1234567890");
-
-    std::random_device rng;
-    std::uniform_int_distribution<> index_dist(0, static_cast<int>(chars.size() - 1));
-    std::stringstream ss;
-    for (int i = 0; i < length; ++i) {
-        ss << chars[index_dist(rng)];
-    }
-
-    return ss.str();
-}
-
-
-
- 

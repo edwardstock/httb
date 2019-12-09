@@ -10,12 +10,13 @@
 #ifndef HTTB_RESPONSE_H
 #define HTTB_RESPONSE_H
 
-#include <string>
-#include <boost/beast.hpp>
 #include "httb/io_container.h"
+#include "types.h"
+
+#include <boost/beast/http/status.hpp>
+#include <string>
 
 namespace httb {
-
 
 class response : public httb::io_container {
 public:
@@ -27,31 +28,31 @@ public:
 
     /// \brief Return map of POST body form-url-encoded data
     /// \return
-    kv_vector parseFormUrlEncode() const;
+    kv_vector parse_form_url_encode() const;
 
     /// \brief Print response data to std::cout
     void dump() const;
 
-    std::string getBody() const override;
-    const char *getBodyC() const override;
-    bool hasBody() const override;
-    size_t getBodySize() const override;
+    std::string get_body() const override;
+    const char* get_body_c() const override;
+    bool has_body() const override;
+    size_t get_body_size() const override;
 
-    void setBody(const std::string &body) override;
-    void setBody(std::string &&body) override;
+    void set_body(const std::string& body) override;
+    void set_body(std::string&& body) override;
 
     /// \brief Check response status  200 <= code < 400
     /// \return
-    bool isSuccess() const;
-    bool isInternalError();
+    bool success() const;
+    bool is_internal_error();
 
-    int statusCode;
+    int code;
     http_status status;
 
-    std::string statusMessage;
+    std::string status_message;
     std::string data;
-    std::string _headersBuffer;
 };
-}
+
+} // namespace httb
 
 #endif //HTTB_RESPONSE_H
