@@ -9,6 +9,7 @@
 #ifndef HTTB_CLIENT_H
 #define HTTB_CLIENT_H
 
+#include "httb/httb_config.h"
 #include "request.h"
 #include "response.h"
 #include "types.h"
@@ -35,7 +36,7 @@ namespace httb {
 /// \brief Response callback (success and failed)
 using response_func_t = std::function<void(httb::response)>;
 
-class client_base {
+class HTTB_API client_base {
 public:
     client_base();
     virtual ~client_base();
@@ -75,7 +76,7 @@ protected:
 };
 
 /// \brief Simple Http Client based on low level http library boost beast
-class client : public httb::client_base {
+class HTTB_API client : public httb::client_base {
 public:
     client();
     ~client() override;
@@ -83,22 +84,22 @@ public:
     /// \brief Make request using request
     /// \param request wss::web::Request
     /// \return wss::web::Response
-    httb::response execute_blocking(const request& request);
+    virtual httb::response execute_blocking(const request& request);
 
     /// \brief ASIO-based async blocking execution using io_context
     /// \param request
     /// \param cb
-    void execute(const request& request, const response_func_t& cb, const progress_func_t& onProgress = nullptr);
+    virtual void execute(const request& request, const response_func_t& cb, const progress_func_t& onProgress = nullptr);
 
     /// \brief ASIO-based async blocking execution using custom io_context
     /// \param ioc net::io_context
     /// \param request your request
     /// \param cb response callback
     /// \param onProgress progress callback
-    void execute_in_context(net::io_context& ioc, const request& request, const response_func_t& cb, const progress_func_t& onProgress = nullptr);
+    virtual void execute_in_context(net::io_context& ioc, const request& request, const response_func_t& cb, const progress_func_t& onProgress = nullptr);
 };
 
-class batch_request {
+class HTTB_API batch_request {
 public:
     /// \brief Each request result callback
     using on_response_each_func = httb::response_func_t;

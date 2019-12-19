@@ -1,5 +1,11 @@
 # Release notes
 
+## 1.0.1
+ - Added support for request mocking
+ - Temporary, tests will work on mock request instead of server. In future, custom web server will be integrated
+ - Added support for MSVC
+ - Added support to build shared library and DLL
+
 ## 1.0.0
  - Stable release
  - Refactored code and used c++17 standard (partially)

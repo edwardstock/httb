@@ -28,7 +28,7 @@
 
 namespace httb {
 
-class base_request : public httb::io_container {
+class HTTB_API base_request : public httb::io_container {
 public:
     using status = boost::beast::http::status;
     /// \brief Http methods
@@ -111,6 +111,10 @@ public:
     /// \return
     method get_method() const;
 
+    /// \brief Return http method name as string
+    /// \return string method name, ie GET, POST, etc
+    std::string get_method_str() const;
+
     /// \brief Whether call will be with requested with ssl stream or not
     /// \return true if ssl is used
     bool is_ssl() const;
@@ -131,8 +135,12 @@ public:
     void add_query(kv&& keyValue);
 
     /// \brief Add query param key-value (value double type)
-    /// \param keyValue pair of string=>double
+    /// \param keyValue pair of string=>uint64_t
     void add_query(kvd&& keyValue);
+
+    /// \brief Add query param key-value (value double type)
+    /// \param keyValue pair of string=>uint64_t
+    void add_query(kvf&& keyValue);
 
     /// \brief Check for parameter exists
     /// \param key query parameter name
@@ -216,7 +224,7 @@ private:
     kv_vector m_params;
 };
 
-class request : public httb::base_request {
+class HTTB_API request : public httb::base_request {
 public:
     request()
         : base_request() {

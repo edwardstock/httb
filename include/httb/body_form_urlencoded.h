@@ -11,6 +11,7 @@
 #define HTTB_BODY_FORMURLENCODED_H
 
 #include "httb/body.h"
+#include "httb/httb_config.h"
 #include "httb/types.h"
 
 #include <map>
@@ -20,7 +21,7 @@
 
 namespace httb {
 
-class body_form_urlencoded : public httb::request_body {
+class HTTB_API body_form_urlencoded : public httb::request_body {
 public:
     body_form_urlencoded() = default;
     body_form_urlencoded(const std::string& encodedParamsString);

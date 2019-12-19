@@ -27,8 +27,11 @@ class HttbConan(ConanFile):
         "OpenSSL:shared": False,
         "boost:shared": False,
     }
-    exports = "version"
+    exports = (
+        "version",
+    )
     exports_sources = (
+        "cfg/*",
         "modules/*",
         "include/*",
         "tests/*",
@@ -45,7 +48,7 @@ class HttbConan(ConanFile):
 
     requires = (
         "OpenSSL/1.1.1b@conan/stable",
-        "toolbox/3.0.0@edwardstock/latest",
+        "toolbox/3.1.1@edwardstock/latest",
         "boost/1.70.0@conan/stable",
     )
     build_requires = (
@@ -57,29 +60,40 @@ class HttbConan(ConanFile):
             self.run("rm -rf *")
             self.run("git clone https://github.com/edwardstock/httb.git .")
 
+    def configure(self):
+        if self.settings.compiler == "Visual Studio":
+            del self.settings.compiler.runtime
+
     def build(self):
         cmake = CMake(self)
-        cmake.configure(defs={'HTTB_TEST': 'Off', 'CMAKE_BUILD_TYPE': 'Release'})
+        opts = {
+            'CMAKE_BUILD_TYPE': self.settings.build_type,
+            'ENABLE_TEST': "Off",
+            'ENABLE_SHARED': 'Off'
+        }
+        if self.options.shared:
+            opts['ENABLE_SHARED'] = 'On'
+
+        cmake.configure(defs=opts)
         cmake.build()
 
     def package(self):
         self.copy("*", dst="include", src="include", keep_path=True)
-        self.copy("*.lib", dst="lib", keep_path=False)
-        self.copy("*.dll", dst="lib", keep_path=False)
-        self.copy("*.dll.a", dst="lib", keep_path=False)
-        self.copy("*.exp", dst="lib", keep_path=False)
-        self.copy("*.ilk", dst="lib", keep_path=False)
-        self.copy("*.pdb", dst="lib", keep_path=False)
-        self.copy("*.so", dst="lib", keep_path=False)
-        self.copy("*.dylib", dst="lib", keep_path=False)
-        self.copy("*.a", dst="lib", keep_path=False)
+        dir_types = ['bin', 'lib', 'Debug', 'Release', 'RelWithDebInfo', 'MinSizeRel']
+        file_types = ['lib', 'dll', 'dll.a', 'a', 'so', 'exp', 'pdb', 'ilk', 'dylib']
+
+        for dirname in dir_types:
+            for ftype in file_types:
+                self.copy("*." + ftype, src=dirname, dst="lib", keep_path=False)
 
     def package_info(self):
         self.cpp_info.libs = self.collect_libs()
 
     def test(self):
         cmake = CMake(self)
-        cmake.configure(defs={'HTTB_TEST': 'On'})
+        cmake.configure(defs={'ENABLE_TEST': 'On'})
         cmake.build(target="httb-test")
-        self.run("bin/httb-test")
-
+        if self.settings.compiler == "Visual Studio":
+            self.run("bin/httb-test.exe")
+        else:
+            self.run("bin/httb-test")

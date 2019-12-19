@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.0)
 project(httb
-        VERSION 1.0.0
+        VERSION 1.0.1
         DESCRIPTION "Simple C++ Boost HTTP client"
         HOMEPAGE_URL "https://github.com/edwardstock/httb"
         LANGUAGES CXX
@@ -21,9 +21,34 @@ conan_init()
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_DEBUG_POSTFIX "" CACHE STRING "postfix")
 
-option(WITH_TESTS "Enable tests" OFF)
+if (MSVC)
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W2 /MP")
+	set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /DEBUG /Od")
+	set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /O2")
+	string(REGEX REPLACE "\\/W3" " " CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS})
+	#	add_compile_options(/wd4068)
+elseif (MINGW)
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -fPIC -Wno-unknown-pragmas -Wno-shift-count-overflow")
+	set(CMAKE_CXX_FLAGS_DEBUG "-g -O0")
+	set(CMAKE_CXX_FLAGS_RELEASE "-O3")
+else ()
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -fvisibility=hidden -fPIC -Wextra -pedantic -Wno-unknown-pragmas -Wno-unused-function -Wno-unused-parameter -Wno-shift-count-overflow")
+	set(CMAKE_CXX_FLAGS_DEBUG "-g -O0 -D_LIBCPP_DEBUG=1")
+	set(CMAKE_CXX_FLAGS_RELEASE "-O3")
+endif ()
+
+option(ENABLE_TEST "Enable tests" OFF)
+
+set(HTTB_EXPORTING 1)
+if (ENABLE_SHARED)
+	set(HTTB_SHARED 1)
+endif ()
+
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/cfg/httb_config.h.in
+               ${CMAKE_CURRENT_SOURCE_DIR}/include/httb/httb_config.h)
 
 set(HEADERS
+    include/httb/httb_config.h
     include/httb/httb.h
     include/httb/io_container.h
     include/httb/body.h
@@ -33,9 +58,12 @@ set(HEADERS
     include/httb/types.h
     src/async_session.h
     src/utils.h
+    include/httb/mocker/mock_client.h
     )
 
+
 set(SOURCES
+    ${HEADERS}
     src/client.cpp
     src/request.cpp
     src/response.cpp
@@ -46,10 +74,12 @@ set(SOURCES
     src/async_session.cpp
     )
 
-add_library(${PROJECT_NAME} STATIC ${SOURCES})
+if (ENABLE_SHARED)
+	add_library(${PROJECT_NAME} SHARED ${SOURCES})
+else ()
+	add_library(${PROJECT_NAME} STATIC ${SOURCES})
+endif ()
 target_compile_definitions(${PROJECT_NAME} PUBLIC -DHTTB_VERSION="${CMAKE_PROJECT_VERSION}")
-
-target_compile_options(${PROJECT_NAME} PUBLIC -fPIC -pedantic -Wall -Wsign-compare -Wunused-parameter)
 
 target_include_directories(${PROJECT_NAME} PUBLIC include)
 
@@ -57,7 +87,7 @@ target_link_libraries(${PROJECT_NAME} CONAN_PKG::boost)
 target_link_libraries(${PROJECT_NAME} CONAN_PKG::toolbox)
 target_link_libraries(${PROJECT_NAME} CONAN_PKG::OpenSSL)
 
-if (HTTB_TEST)
+if (ENABLE_TEST)
 	add_definitions(-DTEST_ROOT="${CMAKE_CURRENT_SOURCE_DIR}/tests")
 	set(PROJECT_NAME_TEST ${PROJECT_NAME}-test)
 
@@ -71,15 +101,15 @@ if (HTTB_TEST)
 	endif ()
 
 	add_executable(${PROJECT_NAME_TEST}
+	               tests/main.cpp
 	               tests/HttpClientTest.cpp
-	               tests/HttpClientNoLocalTest.cpp
+
 	               )
 	target_include_directories(${PROJECT_NAME_TEST} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
-	target_compile_options(${PROJECT_NAME_TEST} PUBLIC -Wno-unused-parameter)
 	target_link_libraries(${PROJECT_NAME_TEST} ${PROJECT_NAME})
 	target_link_libraries(${PROJECT_NAME_TEST} CONAN_PKG::gtest)
 
-	if (HTTB_COVERAGE)
+	if (WITH_COVERAGE)
 		set(COVERAGE_LCOV_EXCLUDES
 		    '${CMAKE_CURRENT_SOURCE_DIR}/libs/*'
 		    '${CMAKE_CURRENT_SOURCE_DIR}/tests/*'

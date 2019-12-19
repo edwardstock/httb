@@ -7,11 +7,14 @@
  * \link   https://github.com/edwardstock
  */
 
+#include "httb/body_string.h"
+
 #include "gtest/gtest.h"
 #include <chrono>
 #include <fstream>
 #include <functional>
 #include <httb/httb.h>
+#include <httb/mocker/mock_client.h>
 #include <iostream>
 #include <memory>
 #include <sstream>
@@ -19,61 +22,79 @@
 #include <thread>
 #include <toolbox/io.h>
 
+static const httb::request_executor simple_resp_executor = ([](const httb::request& request) {
+    httb::response resp;
+    resp << "This is " << request.get_method_str() << " method response!";
+    return resp;
+});
+
+static const httb::request_executor params_resp_executor = ([](const httb::request& request) {
+    httb::response resp;
+    resp << "This is " << request.get_method_str() << " method response! Input: ";
+    if (request.get_method() == httb::request::method::get || request.get_method() == httb::request::method::delete_) {
+        resp << request.get_query_string();
+    } else {
+        resp << request.get_body();
+    }
+
+    return resp;
+});
+
 TEST(HttpClientTest, TestBuildRequestSimple) {
-    httb::request req("http://localhost:9000/simple-server.php/get");
+    httb::request req("http://127.0.0.1:9000/simple-server.php/get");
     ASSERT_FALSE(req.is_ssl());
     ASSERT_STREQ(req.get_proto_name().c_str(), "http");
     ASSERT_EQ(req.get_port(), (uint16_t) 9000);
     ASSERT_STREQ(req.get_port_str().c_str(), "9000");
-    ASSERT_STREQ(req.get_host().c_str(), "localhost");
+    ASSERT_STREQ(req.get_host().c_str(), "127.0.0.1");
     ASSERT_STREQ(req.get_path().c_str(), "/simple-server.php/get");
     ASSERT_STREQ(req.get_query_string().c_str(), "");
-    ASSERT_STREQ(req.get_url().c_str(), "http://localhost:9000/simple-server.php/get");
+    ASSERT_STREQ(req.get_url().c_str(), "http://127.0.0.1:9000/simple-server.php/get");
 }
 
 TEST(HttpClientTest, TestRequestSettings) {
-    httb::request req("http://localhost:9000/simple-server.php/get");
+    httb::request req("http://127.0.0.1:9000/simple-server.php/get");
 
     ASSERT_FALSE(req.is_ssl());
     req.use_ssl(true);
     ASSERT_TRUE(req.is_ssl());
 
     req.add_query({"q", "1"});
-    ASSERT_STREQ("http://localhost:9000/simple-server.php/get?q=1", req.get_url().c_str());
+    ASSERT_STREQ("http://127.0.0.1:9000/simple-server.php/get?q=1", req.get_url().c_str());
 
     req.add_query({"something[]", "1"});
     req.add_query({"something[]", "2"});
     req.add_query({"something[]", "3"});
 
-    ASSERT_STREQ("http://localhost:9000/simple-server.php/get?q=1&something[]=1&something[]=2&something[]=3",
+    ASSERT_STREQ("http://127.0.0.1:9000/simple-server.php/get?q=1&something[]=1&something[]=2&something[]=3",
                  req.get_url().c_str());
 
     req.remove_query_array("something[]", 0);
-    ASSERT_STREQ("http://localhost:9000/simple-server.php/get?q=1&something[]=2&something[]=3", req.get_url().c_str());
+    ASSERT_STREQ("http://127.0.0.1:9000/simple-server.php/get?q=1&something[]=2&something[]=3", req.get_url().c_str());
 
     req.remove_query_array("something[]", 1);
-    ASSERT_STREQ("http://localhost:9000/simple-server.php/get?q=1&something[]=2", req.get_url().c_str());
+    ASSERT_STREQ("http://127.0.0.1:9000/simple-server.php/get?q=1&something[]=2", req.get_url().c_str());
 
     req.remove_query("something[]");
-    ASSERT_STREQ("http://localhost:9000/simple-server.php/get?q=1", req.get_url().c_str());
+    ASSERT_STREQ("http://127.0.0.1:9000/simple-server.php/get?q=1", req.get_url().c_str());
 
     req.add_query({"something[]", "1"});
     req.add_query({"something[]", "2"});
     req.add_query({"something[]", "3"});
-    ASSERT_STREQ("http://localhost:9000/simple-server.php/get?q=1&something[]=1&something[]=2&something[]=3",
+    ASSERT_STREQ("http://127.0.0.1:9000/simple-server.php/get?q=1&something[]=1&something[]=2&something[]=3",
                  req.get_url().c_str());
 
     req.remove_query_array("something[]", 1);
-    ASSERT_STREQ("http://localhost:9000/simple-server.php/get?q=1&something[]=1&something[]=3", req.get_url().c_str());
+    ASSERT_STREQ("http://127.0.0.1:9000/simple-server.php/get?q=1&something[]=1&something[]=3", req.get_url().c_str());
 
     req.remove_query_array("something[]", 0);
-    ASSERT_STREQ("http://localhost:9000/simple-server.php/get?q=1&something[]=3", req.get_url().c_str());
+    ASSERT_STREQ("http://127.0.0.1:9000/simple-server.php/get?q=1&something[]=3", req.get_url().c_str());
 
     req.remove_query_array("something[]", 10); // overflow
-    ASSERT_STREQ("http://localhost:9000/simple-server.php/get?q=1&something[]=3", req.get_url().c_str());
+    ASSERT_STREQ("http://127.0.0.1:9000/simple-server.php/get?q=1&something[]=3", req.get_url().c_str());
 
     req.remove_query_array("something[]", -10); // underflow
-    ASSERT_STREQ("http://localhost:9000/simple-server.php/get?q=1&something[]=3", req.get_url().c_str());
+    ASSERT_STREQ("http://127.0.0.1:9000/simple-server.php/get?q=1&something[]=3", req.get_url().c_str());
 
     req.set_host("google.com");
     ASSERT_STREQ("http://google.com:9000/simple-server.php/get?q=1&something[]=3", req.get_url().c_str());
@@ -123,28 +144,28 @@ TEST(HttpClientTest, TestRequestSettings) {
 }
 
 TEST(HttpRequestTest, TestPathAdding) {
-    httb::request req("http://localhost:9000");
+    httb::request req("http://127.0.0.1:9000");
     req.set_path("search");
-    ASSERT_STREQ("http://localhost:9000/search", req.get_url().c_str());
+    ASSERT_STREQ("http://127.0.0.1:9000/search", req.get_url().c_str());
 
     req.set_path("/search");
-    ASSERT_STREQ("http://localhost:9000/search", req.get_url().c_str());
+    ASSERT_STREQ("http://127.0.0.1:9000/search", req.get_url().c_str());
 
     req.set_path("/api/v1");
-    ASSERT_STREQ("http://localhost:9000/api/v1", req.get_url().c_str());
+    ASSERT_STREQ("http://127.0.0.1:9000/api/v1", req.get_url().c_str());
 
     req.add_path("user/create");
-    ASSERT_STREQ("http://localhost:9000/api/v1/user/create", req.get_url().c_str());
+    ASSERT_STREQ("http://127.0.0.1:9000/api/v1/user/create", req.get_url().c_str());
 
     req.set_path("api/v1/");
-    ASSERT_STREQ("http://localhost:9000/api/v1/", req.get_url().c_str());
+    ASSERT_STREQ("http://127.0.0.1:9000/api/v1/", req.get_url().c_str());
 
     req.add_path("user/create");
-    ASSERT_STREQ("http://localhost:9000/api/v1/user/create", req.get_url().c_str());
+    ASSERT_STREQ("http://127.0.0.1:9000/api/v1/user/create", req.get_url().c_str());
 
     req.set_path("/api/v1/");
     req.add_path("user/create/");
-    ASSERT_STREQ("http://localhost:9000/api/v1/user/create/", req.get_url().c_str());
+    ASSERT_STREQ("http://127.0.0.1:9000/api/v1/user/create/", req.get_url().c_str());
 }
 
 TEST(HttpClientTest, TestBuildRequestGoogleQuery) {
@@ -187,8 +208,8 @@ TEST(HttpClientTest, TestResponseError) {
 }
 
 TEST(HttpClientTest, TestGet) {
-    httb::request req("http://localhost:9000/simple-server.php/get");
-    httb::client client;
+    httb::request req("http://127.0.0.1:9000/simple-server.php/get");
+    httb::mock_client client(simple_resp_executor);
     client.set_verbose(true);
     httb::response resp = client.execute_blocking(req);
 
@@ -201,14 +222,55 @@ TEST(HttpClientTest, TestGet) {
     ASSERT_STREQ(body.c_str(), "This is GET method response!");
 }
 
+TEST(HttpClientTest, TestGetAsyncClearResponse) {
+    httb::request req("http://127.0.0.1:9000/simple-server.php/get");
+    httb::mock_client client(simple_resp_executor);
+    client.set_verbose(true);
+    bool success = false;
+    client.execute(req, [&success](httb::response resp) {
+        const std::string body = resp.get_body(true);
+        if (!resp.success()) {
+            std::cout << "Error response:" << std::endl;
+            std::cout << body << std::endl;
+        }
+        success = resp.success();
+        ASSERT_TRUE(resp.success());
+        ASSERT_STREQ(body.c_str(), "This is GET method response!");
+        ASSERT_STREQ("", resp.get_body().c_str());
+    });
+
+    ASSERT_TRUE(success);
+}
+
+TEST(HttpClientTest, TestGetAsync) {
+    httb::request req("http://127.0.0.1:9000/simple-server.php/get");
+    httb::mock_client client(simple_resp_executor);
+    client.set_verbose(true);
+    bool success = false;
+    client.execute(req, [&success](httb::response resp) {
+        const std::string body = resp.get_body();
+        if (!resp.success()) {
+            std::cout << "Error response:" << std::endl;
+            std::cout << body << std::endl;
+        }
+        success = resp.success();
+        ASSERT_TRUE(resp.success());
+        ASSERT_STREQ(body.c_str(), "This is GET method response!");
+        ASSERT_STRNE("", resp.get_body().c_str());
+    });
+
+    ASSERT_TRUE(success);
+}
+
 TEST(HttpClientTest, TestGetWithParams) {
-    httb::request req("http://localhost:9000/simple-server.php/get");
+    httb::request req("http://127.0.0.1:9000/simple-server.php/get");
     req.add_query({"a", "1"});
     req.add_query({"b[]", "2"});
     req.add_query({"c", "three"});
-    req.add_query(httb::kvd{"double_value", 105.3851});
+    // float value will have 7 fixed digits precision, but better pass string if you need 100% accuracy
+    req.add_query(httb::kvf{"float_value", 105.38511112});
     req.add_query(httb::kvd{"int_value", 500});
-    httb::client client;
+    httb::mock_client client(params_resp_executor);
     client.set_verbose(true);
     client.execute(req, [](httb::response resp) {
         const std::string body = resp.get_body();
@@ -217,15 +279,13 @@ TEST(HttpClientTest, TestGetWithParams) {
             std::cout << body << std::endl;
         }
         ASSERT_TRUE(resp.success());
-        ASSERT_STREQ("This is GET method response! Input: a=1;b[0=2;];c=three;double_value=105;int_value=500;",
+        ASSERT_STREQ("This is GET method response! Input: ?a=1&b[]=2&c=three&float_value=105.3851111&int_value=500",
                      body.c_str());
     });
 }
 
-#include "httb/body_string.h"
-
 TEST(HttpClientTest, TestSimplePost) {
-    httb::request req("http://localhost:9000/simple-server.php/post");
+    httb::request req("http://127.0.0.1:9000/simple-server.php/post");
     req.set_method(httb::request::method::post);
 
     httb::body_string b1("aaa=1&bbb=2&ccc=3");
@@ -236,7 +296,7 @@ TEST(HttpClientTest, TestSimplePost) {
     req.set_body(b1);
     req.set_header({"content-type", "application/x-www-form-urlencoded"});
 
-    httb::client client;
+    httb::mock_client client(params_resp_executor);
     client.set_verbose(true);
     httb::response resp = client.execute_blocking(req);
 
@@ -245,7 +305,7 @@ TEST(HttpClientTest, TestSimplePost) {
         std::cout << resp.get_body() << std::endl;
     }
     ASSERT_TRUE(resp.success());
-    ASSERT_STREQ(resp.get_body_c(), "This is POST method response!");
+    ASSERT_STREQ(resp.get_body_c(), "This is POST method response! Input: aaa=1&bbb=2&ccc=3");
 }
 
 TEST(HttpClientTest, DownloadFile) {
@@ -254,7 +314,7 @@ TEST(HttpClientTest, DownloadFile) {
 
     client.set_verbose(true);
     httb::request
-        req("https://raw.githubusercontent.com/MinterTeam/minter-go-node/dev/mainnet/minter-mainnet-1/genesis.json");
+        req("https://raw.githubusercontent.com/MinterTeam/minter-go-node/master/mainnet/minter-mainnet-1/genesis.json");
 
     req.add_header({"Connection", "keep-alive"});
     req.add_header({"Cache-Control", "max-age=0"});
@@ -268,7 +328,7 @@ TEST(HttpClientTest, DownloadFile) {
 }
 
 TEST(HttpClientTest, TestSimplePostSmallFile) {
-    httb::request req("http://localhost:9000/simple-server.php/file");
+    httb::request req("http://127.0.0.1:9000/simple-server.php/file");
     req.set_method(httb::request::method::post);
 
     httb::body_multipart body;
@@ -282,7 +342,7 @@ TEST(HttpClientTest, TestSimplePostSmallFile) {
 
     req.set_body(body);
 
-    httb::client client;
+    httb::mock_client client(simple_resp_executor);
     client.set_verbose(true);
     httb::response resp = client.execute_blocking(req);
 
@@ -295,7 +355,7 @@ TEST(HttpClientTest, TestSimplePostSmallFile) {
 }
 
 TEST(HttpClientTest, TestSimplePostMediumFile) {
-    httb::request req("http://localhost:9000/simple-server.php/file");
+    httb::request req("http://127.0.0.1:9000/simple-server.php/file");
     req.set_method(httb::request::method::post);
 
     httb::body_multipart body;
@@ -307,7 +367,7 @@ TEST(HttpClientTest, TestSimplePostMediumFile) {
 
     req.set_body(body);
 
-    httb::client client;
+    httb::mock_client client(simple_resp_executor);
     client.set_verbose(true);
     httb::response resp = client.execute_blocking(req);
 
@@ -320,7 +380,7 @@ TEST(HttpClientTest, TestSimplePostMediumFile) {
 }
 
 TEST(HttpClientTest, TestSimplePostBigFile) {
-    httb::request req("http://localhost:9000/simple-server.php/file");
+    httb::request req("http://127.0.0.1:9000/simple-server.php/file");
     req.set_method(httb::request::method::post);
 
     httb::body_multipart body;
@@ -333,7 +393,7 @@ TEST(HttpClientTest, TestSimplePostBigFile) {
 
     req.set_body(body);
 
-    httb::client client;
+    httb::mock_client client(simple_resp_executor);
     client.set_verbose(true);
     httb::response resp = client.execute_blocking(req);
 
@@ -346,12 +406,12 @@ TEST(HttpClientTest, TestSimplePostBigFile) {
 }
 
 TEST(HttpClientTest, TestSimplePut) {
-    httb::request req("http://localhost:9000/simple-server.php/put");
+    httb::request req("http://127.0.0.1:9000/simple-server.php/put");
     req.set_method(httb::request::method::put);
     req.set_body("aaa=1&bbb=2&ccc=3");
     req.set_header({"content-type", "application/x-www-form-urlencoded"});
 
-    httb::client client;
+    httb::mock_client client(simple_resp_executor);
     client.set_verbose(true);
     httb::response resp = client.execute_blocking(req);
 
@@ -364,10 +424,10 @@ TEST(HttpClientTest, TestSimplePut) {
 }
 
 TEST(HttpClientTest, TestSimpleDelete) {
-    httb::request req("http://localhost:9000/simple-server.php/delete");
+    httb::request req("http://127.0.0.1:9000/simple-server.php/delete");
     req.set_method(httb::request::method::delete_);
 
-    httb::client client;
+    httb::mock_client client(simple_resp_executor);
     client.set_verbose(true);
     httb::response resp = client.execute_blocking(req);
 
@@ -483,9 +543,9 @@ TEST(HttpClientTest, TestReusingClientInstance) {
 }
 
 TEST(HttpClientTest, TestSimpleAsyncGet) {
-    httb::request req("http://localhost:9000/simple-server.php/get");
-    httb::request req2("http://localhost:9000/simple-server.php/get");
-    httb::client client;
+    httb::request req("http://127.0.0.1:9000/simple-server.php/get");
+    httb::request req2("http://127.0.0.1:9000/simple-server.php/get");
+    httb::mock_client client(simple_resp_executor);
     client.set_verbose(true);
     bool executed1, executed2 = false;
     bool responseIsSuccess1, responseIsSuccess2 = false;
@@ -524,61 +584,4 @@ TEST(HttpClientTest, TestSimpleAsyncGet) {
     ASSERT_TRUE(executed2);
     ASSERT_TRUE(responseIsSuccess1);
     ASSERT_TRUE(responseIsSuccess2);
-}
-
-std::string exec(const char* cmd) {
-    std::string result;
-    std::unique_ptr<FILE, decltype(&pclose)> pipe(popen(cmd, "r"), pclose);
-    if (!pipe) {
-        throw std::runtime_error("popen() failed!");
-    }
-    std::array<char, 128> buffer;
-    while (fgets(buffer.data(), buffer.size(), pipe.get()) != nullptr) {
-        result += buffer.data();
-    }
-    return result;
-}
-
-int main(int argc, char** argv) {
-    bool runLocalServer = true;
-    std::string pid;
-
-    if (argc >= 2 && std::string(argv[1]) == "nolocal") {
-        runLocalServer = false;
-    }
-
-    if (runLocalServer) {
-        std::stringstream ss1;
-        ss1 << "$(which bash) ";
-        ss1 << TEST_ROOT << "/mock/run-server.sh " << TEST_ROOT << "/mock";
-
-        std::cout << ss1.str() << std::endl;
-        pid = exec(ss1.str().c_str());
-    }
-
-    ::testing::InitGoogleTest(&argc, argv);
-
-    std::this_thread::sleep_for(std::chrono::seconds(2));
-    int ret = RUN_ALL_TESTS();
-
-    if (runLocalServer) {
-        std::stringstream ss2;
-        ss2 << "$(which curl) -vvv "
-            << "http://127.0.0.1:9000/simple-server.php/get";
-        std::cout << ss2.str() << std::endl;
-        std::cout << system(ss2.str().c_str()) << std::endl;
-
-        ss2.str("");
-        ss2.clear();
-
-        ss2 << "cat " << TEST_ROOT << "/mock/run.log";
-        std::cout << ss2.str() << std::endl;
-        std::cout << system(ss2.str().c_str()) << std::endl;
-
-        std::stringstream ss;
-        ss << "kill -9 " << pid;
-        system(ss.str().c_str());
-    }
-
-    return ret;
 }

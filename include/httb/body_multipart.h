@@ -11,6 +11,7 @@
 #define HTTB_MULTIPART_HPP
 
 #include "httb/body.h"
+#include "httb/httb_config.h"
 
 #include <functional>
 #include <sstream>
@@ -31,7 +32,7 @@ struct file_path_entry {
     std::string path;
 };
 
-class multipart_entry {
+class HTTB_API multipart_entry {
 public:
     using body_resolver_func = std::function<std::string(void)>;
     /// \brief Simple key-value entry, like basic POST request with fields data
@@ -55,7 +56,7 @@ private:
     std::string m_body;
 };
 
-class body_multipart : public httb::request_body {
+class HTTB_API body_multipart : public httb::request_body {
 public:
     std::string boundaryName;
     std::vector<httb::multipart_entry> m_entries;

@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
 
-if [ ! -f "/usr/bin/php" ]
-then
-    apt-get install -y apt-transport-https ca-certificates curl
-    if [ ! -f "/etc/apt/trusted.gpg.d/php.gpg" ]
-    then
-        wget -O /etc/apt/trusted.gpg.d/php.gpg https://packages.sury.org/php/apt.gpg
-    fi
-    echo "deb https://packages.sury.org/php/ jessie main" > /etc/apt/sources.list.d/php.list
-    apt-get update
-    apt-get install -y --force-yes php php-cli
-fi
+#if [ ! -f "/usr/bin/php" ]
+#then
+#    apt-get install -y apt-transport-https ca-certificates curl
+#    if [ ! -f "/etc/apt/trusted.gpg.d/php.gpg" ]
+#    then
+#        wget -O /etc/apt/trusted.gpg.d/php.gpg https://packages.sury.org/php/apt.gpg
+#    fi
+#    echo "deb https://packages.sury.org/php/ jessie main" > /etc/apt/sources.list.d/php.list
+#    apt-get update
+#    apt-get install -y --force-yes php php-cli
+#fi
 
 if [ ! -f "/usr/bin/g++" ]
 then

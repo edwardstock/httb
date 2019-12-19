@@ -14,6 +14,10 @@
 #include <iostream>
 #include <toolbox/strings.hpp>
 
+httb::response::response()
+    : code(200), status(http_status::ok), status_message("Ok") {
+}
+
 httb::kv_vector httb::response::parse_form_url_encode() const {
     if (data.empty()) {
         return {};
@@ -44,6 +48,14 @@ bool httb::response::success() const {
 std::string httb::response::get_body() const {
     return data;
 }
+std::string httb::response::get_body(bool clear) {
+    if (!clear) {
+        return data;
+    }
+
+    std::string b = std::move(data);
+    return b;
+}
 const char* httb::response::get_body_c() const {
     return data.c_str();
 }
@@ -61,4 +73,12 @@ size_t httb::response::get_body_size() const {
 }
 bool httb::response::is_internal_error() {
     return code >= INTERNAL_ERROR_OFFSET || code < 0;
+}
+httb::response::operator bool() const noexcept {
+    return success();
+}
+
+std::ostream& operator<<(std::ostream& os, const httb::response& resp) {
+    os << resp.get_body();
+    return os;
 }

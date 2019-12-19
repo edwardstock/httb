@@ -12,3 +12,4 @@ conanfile.txt.junk
 
 .idea/
 !.idea/codeStyles
+include/httb/httb_config.h

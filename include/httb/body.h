@@ -10,13 +10,14 @@
 #ifndef HTTB_BODY_H
 #define HTTB_BODY_H
 
+#include "httb/httb_config.h"
 #include "httb/io_container.h"
 
 #include <string>
 
 namespace httb {
 
-class request_body {
+class HTTB_API request_body {
 public:
     virtual ~request_body() = default;
     virtual std::string build(httb::io_container* request) const = 0;

@@ -1,52 +1,70 @@
-version: 2
-jobs:
-  build:
-    docker:
-      - image: debian:stretch
-        environment:
-          CXX: /usr/bin/g++
-          CC: /usr/bin/gcc
-          CONAN_CPU_COUNT: 8
+version: 2.1
+commands:
+  checkout_recursive:
     steps:
-      - run: apt-get update
-      - run: apt-get install -y git
       - run:
-          name: Cloning repo
+          name: Checkout
           command: git clone --recursive https://github.com/edwardstock/httb .
-      - restore_cache:
-          keys:
-            - custom-pkgs-{{ checksum ".circleci/setup.sh" }}
-      - run:
-          name: Preparing
-          command: $(which bash) .circleci/setup.sh
-      - save_cache:
-          key: custom-pkgs-{{ checksum ".circleci/setup.sh" }}
-          paths:
-            - /tmp/pkgs
-      - run: pip3 install setuptools -U
-      - run: pip3 install conan
+
+  conan_remotes:
+    steps:
+      - run: sudo pip3 install --upgrade conan
       - run: conan remote add scatter https://api.bintray.com/conan/edwardstock/scatter
       - run: conan remote add bincrafters https://api.bintray.com/conan/bincrafters/public-conan
       - run: conan remote add edwardstock https://api.bintray.com/conan/edwardstock/conan-public
       - run: conan user -p $BINTRAY_API_KEY -r edwardstock edwardstock
-      - run: mkdir -p _build
-      - run: export CC=/usr/bin/gcc
-      - run: export CXX=/usr/bin/g++
-      - restore_cache:
+
+  conan_restore_cache:
+    steps:
+      - restore_cache: # restore conan cache
           keys:
-            - conan-dir-{{ checksum "conanfile.txt" }}-{{ checksum "conanfile.py" }}
-      - run: conan install boost/1.70.0@conan/stable
-      - run:
-          name: Configuring
-          command: cd _build && cmake .. -DCMAKE_BUILD_TYPE=Debug -DHTTB_TEST=ON
-      - save_cache:
-          key: conan-dir-{{ checksum "conanfile.txt" }}
+            - conan-dir-{{ checksum "conanfile.py" }}
+  conan_save_cache:
+    steps:
+      - save_cache: # save conan cache
+          key: conan-dir-{{ checksum "conanfile.py" }}
           paths:
-            - /root/.conan
-      - run: cmake --build ./_build --target httb-test
+            - $HOME/.conan
+  conan_project_deps:
+    steps:
+      - run:
+          name: Project dependencies
+          command: $(which bash) .circleci/conan_deps.sh
+
+  project_test:
+    steps:
       - run:
           name: Testing
           command: $(which bash) .circleci/test.sh
+
+  project_deploy_conan:
+    steps:
       - run:
-          name: Deploy
+          name: Deploy to Conan bintray
           command: $(which bash) .circleci/deploy.sh
+
+gcc-5:
+  docker:
+    - image: conanio/gcc5
+      environment:
+        CXX: /usr/bin/g++
+        CC: /usr/bin/gcc
+        CONAN_CPU_COUNT: 8
+  steps:
+    - checkout_recursive
+    - conan_remotes
+    - conan_restore_cache
+    - conan_project_deps
+    - conan_save_cache
+    - project_test
+    - project_deploy_conan
+
+workflows:
+  version: 2.1
+  build_and_test:
+    jobs:
+      - gcc-5
+#      - gcc-6
+#      - gcc-7
+#      - gcc-8
+#      - gcc-9

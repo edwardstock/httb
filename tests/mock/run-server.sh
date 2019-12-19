@@ -11,25 +11,11 @@ fi
 OS_TEST=$(uname | grep Darwin || echo "Linux")
 DD_SUFFIX="M"
 RUN_PATH=${1}
+
 if [ "${RUN_PATH}" == "" ]
 then
     echo "Empty working directory"
     exit 255
-fi
-
-if [ "${OS_TEST}" != "Linux" ]
-then
-    DD_SUFFIX="m"
-fi
-
-if [ ! -f "${RUN_PATH}/test_medium.bin" ]
-then
-    dd if=/dev/urandom of=${RUN_PATH}/test_medium.bin bs=1${DD_SUFFIX} count=1
-fi
-
-if [ ! -f "${RUN_PATH}/test_big.bin" ]
-then
-    dd if=/dev/urandom of=${RUN_PATH}/test_big.bin bs=24${DD_SUFFIX} count=1
 fi
 
 echo "" > ${RUN_PATH}/run.log

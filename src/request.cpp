@@ -13,6 +13,7 @@
 
 #include <boost/regex.hpp>
 #include <httb/types.h>
+#include <iomanip>
 #include <sstream>
 #include <string>
 #include <toolbox/strings.hpp>
@@ -185,6 +186,14 @@ void httb::base_request::add_query(kvd&& keyValue) {
     add_query({tmp.first, ss.str()});
 }
 
+void httb::base_request::add_query(httb::kvf&& keyValue) {
+    auto tmp = std::move(keyValue);
+    std::stringstream ss;
+    ss << std::fixed << std::setprecision(7) << tmp.second;
+
+    add_query({tmp.first, ss.str()});
+}
+
 void httb::base_request::use_ssl(bool use) {
     m_ssl = use;
 }
@@ -213,6 +222,10 @@ std::string httb::base_request::get_url() const {
 
 httb::base_request::method httb::base_request::get_method() const {
     return m_method;
+}
+
+std::string httb::base_request::get_method_str() const {
+    return method_to_string(get_method());
 }
 
 bool httb::base_request::has_query() const {

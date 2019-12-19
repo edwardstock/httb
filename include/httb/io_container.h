@@ -10,6 +10,7 @@
 #ifndef HTTB_IO_CONTAINER_H
 #define HTTB_IO_CONTAINER_H
 
+#include "httb/httb_config.h"
 #include "types.h"
 
 #include <boost/optional.hpp>
@@ -18,7 +19,7 @@
 
 namespace httb {
 
-class io_container {
+class HTTB_API io_container {
 public:
     io_container();
 

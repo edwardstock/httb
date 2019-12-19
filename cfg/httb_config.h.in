@@ -1,0 +1,39 @@
+/*!
+ * httb.
+ * httb_config.h
+ *
+ * \date 2019
+ * \author Eduard Maximovich (edward.vstock@gmail.com)
+ * \link   https://github.com/edwardstock
+ */
+
+#ifndef HTTB_HTTB_CONFIG_H
+#define HTTB_HTTB_CONFIG_H
+
+#cmakedefine HTTB_SHARED
+#cmakedefine HTTB_EXPORTING
+
+#ifdef HTTB_SHARED
+#ifdef HTTB_EXPORTING
+#if _MSC_VER
+#define HTTB_API __declspec(dllexport)
+#define HTTB_EXT
+#else
+#define HTTB_API __attribute__((visibility("default")))
+#define HTTB_EXT
+#endif
+#else
+#if _MSC_VER
+#define HTTB_API __declspec(dllimport)
+#define HTTB_EXT extern
+#else
+#define HTTB_API
+#define HTTB_EXT
+#endif
+#endif
+#else
+#define HTTB_API
+#define HTTB_EXT
+#endif // HTTB_SHARED
+
+#endif //HTTB_HTTB_CONFIG_H

@@ -37,6 +37,7 @@ using progress_func_t = std::function<void(uint64_t, uint64_t, double)>;
 /// \brief Simple std::pair<std::string, std::string>
 using kv = std::pair<std::string, std::string>;
 using kvd = std::pair<std::string, uint64_t>;
+using kvf = std::pair<std::string, double>;
 
 /// \brief Simple vector of pairs wss::web::KeyValue
 using kv_vector = std::vector<httb::kv>;
