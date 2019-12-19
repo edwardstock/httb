@@ -43,21 +43,22 @@ commands:
           name: Deploy to Conan bintray
           command: $(which bash) .circleci/deploy.sh
 
-gcc-5:
-  docker:
-    - image: conanio/gcc5
-      environment:
-        CXX: /usr/bin/g++
-        CC: /usr/bin/gcc
-        CONAN_CPU_COUNT: 8
-  steps:
-    - checkout_recursive
-    - conan_remotes
-    - conan_restore_cache
-    - conan_project_deps
-    - conan_save_cache
-    - project_test
-    - project_deploy_conan
+jobs:
+  gcc-5:
+    docker:
+      - image: conanio/gcc5
+        environment:
+          CXX: /usr/bin/g++
+          CC: /usr/bin/gcc
+          CONAN_CPU_COUNT: 8
+    steps:
+      - checkout_recursive
+      - conan_remotes
+      - conan_restore_cache
+      - conan_project_deps
+      - conan_save_cache
+      - project_test
+      - project_deploy_conan
 
 workflows:
   version: 2.1
