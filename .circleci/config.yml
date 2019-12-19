@@ -43,14 +43,7 @@ commands:
           name: Deploy to Conan bintray
           command: $(which bash) .circleci/deploy.sh
 
-jobs:
-  gcc-5:
-    docker:
-      - image: conanio/gcc5
-        environment:
-          CXX: /usr/bin/g++
-          CC: /usr/bin/gcc
-          CONAN_CPU_COUNT: 8
+  do_all:
     steps:
       - checkout_recursive
       - conan_remotes
@@ -60,12 +53,59 @@ jobs:
       - project_test
       - project_deploy_conan
 
+jobs:
+  gcc-5:
+    docker:
+      - image: conanio/gcc5
+        environment:
+          CXX: /usr/bin/g++
+          CC: /usr/bin/gcc
+          CONAN_CPU_COUNT: 8
+    steps:
+      - do_all
+  gcc-6:
+    docker:
+      - image: conanio/gcc6
+        environment:
+          CXX: /usr/bin/g++
+          CC: /usr/bin/gcc
+          CONAN_CPU_COUNT: 8
+    steps:
+      - do_all
+  gcc-7:
+    docker:
+      - image: conanio/gcc7
+        environment:
+          CXX: /usr/bin/g++
+          CC: /usr/bin/gcc
+          CONAN_CPU_COUNT: 8
+    steps:
+      - do_all
+  gcc-8:
+    docker:
+      - image: conanio/gcc8
+        environment:
+          CXX: /usr/bin/g++
+          CC: /usr/bin/gcc
+          CONAN_CPU_COUNT: 8
+    steps:
+      - do_all
+  gcc-9:
+    docker:
+      - image: conanio/gcc9
+        environment:
+          CXX: /usr/bin/g++
+          CC: /usr/bin/gcc
+          CONAN_CPU_COUNT: 8
+    steps:
+      - do_all
+
 workflows:
   version: 2.1
   build_and_test:
     jobs:
       - gcc-5
-#      - gcc-6
-#      - gcc-7
-#      - gcc-8
-#      - gcc-9
+      - gcc-6
+      - gcc-7
+      - gcc-8
+      - gcc-9
