@@ -3,7 +3,7 @@ Lightweight C++ HTTP Client based on Boost.Beast
 
 | Bintray | Windows | Linux & macOS |
 |:--------:|:---------:|:-----------------:|
-|[ ![Download](https://api.bintray.com/packages/edwardstock/edwardstock/httb%3Aedwardstock/images/download.svg) ](https://bintray.com/edwardstock/edwardstock/httb%3Aedwardstock/_latestVersion)|unavailable|[![CircleCI](https://circleci.com/gh/edwardstock/httb/tree/master.svg?style=svg)](https://circleci.com/gh/edwardstock/httb/tree/master)|
+|[ ![Download](https://api.bintray.com/packages/edwardstock/conan-public/httb%3Aedwardstock/images/download.svg) ](https://bintray.com/edwardstock/conan-public/httb:edwardstock/_latestVersion)|Support VS 17|[![CircleCI](https://circleci.com/gh/edwardstock/httb/tree/master.svg?style=svg)](https://circleci.com/gh/edwardstock/httb/tree/master)|
 
 ## Features
  * Any request type
